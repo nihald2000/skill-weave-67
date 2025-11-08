@@ -14,7 +14,255 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      data_sources: {
+        Row: {
+          file_path: string | null
+          id: string
+          processed: boolean | null
+          raw_data: Json | null
+          source_name: string | null
+          source_type: Database["public"]["Enums"]["source_type"]
+          source_url: string | null
+          uploaded_at: string
+          user_id: string
+        }
+        Insert: {
+          file_path?: string | null
+          id?: string
+          processed?: boolean | null
+          raw_data?: Json | null
+          source_name?: string | null
+          source_type: Database["public"]["Enums"]["source_type"]
+          source_url?: string | null
+          uploaded_at?: string
+          user_id: string
+        }
+        Update: {
+          file_path?: string | null
+          id?: string
+          processed?: boolean | null
+          raw_data?: Json | null
+          source_name?: string | null
+          source_type?: Database["public"]["Enums"]["source_type"]
+          source_url?: string | null
+          uploaded_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_sources_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      extracted_skills: {
+        Row: {
+          confidence_score: number
+          created_at: string
+          id: string
+          is_hidden: boolean | null
+          last_used: string | null
+          proficiency_level:
+            | Database["public"]["Enums"]["proficiency_level"]
+            | null
+          skill_name: string
+          skill_profile_id: string
+          skill_taxonomy_id: string | null
+          updated_at: string
+          years_experience: number | null
+        }
+        Insert: {
+          confidence_score: number
+          created_at?: string
+          id?: string
+          is_hidden?: boolean | null
+          last_used?: string | null
+          proficiency_level?:
+            | Database["public"]["Enums"]["proficiency_level"]
+            | null
+          skill_name: string
+          skill_profile_id: string
+          skill_taxonomy_id?: string | null
+          updated_at?: string
+          years_experience?: number | null
+        }
+        Update: {
+          confidence_score?: number
+          created_at?: string
+          id?: string
+          is_hidden?: boolean | null
+          last_used?: string | null
+          proficiency_level?:
+            | Database["public"]["Enums"]["proficiency_level"]
+            | null
+          skill_name?: string
+          skill_profile_id?: string
+          skill_taxonomy_id?: string | null
+          updated_at?: string
+          years_experience?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extracted_skills_skill_profile_id_fkey"
+            columns: ["skill_profile_id"]
+            isOneToOne: false
+            referencedRelation: "skill_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extracted_skills_skill_taxonomy_id_fkey"
+            columns: ["skill_taxonomy_id"]
+            isOneToOne: false
+            referencedRelation: "skill_taxonomy"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      skill_evidence: {
+        Row: {
+          created_at: string
+          description: string | null
+          evidence_date: string | null
+          evidence_type: Database["public"]["Enums"]["evidence_type"]
+          extracted_skill_id: string
+          id: string
+          link: string | null
+          snippet: string | null
+          source_reliability: number | null
+          source_type: Database["public"]["Enums"]["source_type"]
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          evidence_date?: string | null
+          evidence_type: Database["public"]["Enums"]["evidence_type"]
+          extracted_skill_id: string
+          id?: string
+          link?: string | null
+          snippet?: string | null
+          source_reliability?: number | null
+          source_type: Database["public"]["Enums"]["source_type"]
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          evidence_date?: string | null
+          evidence_type?: Database["public"]["Enums"]["evidence_type"]
+          extracted_skill_id?: string
+          id?: string
+          link?: string | null
+          snippet?: string | null
+          source_reliability?: number | null
+          source_type?: Database["public"]["Enums"]["source_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_evidence_extracted_skill_id_fkey"
+            columns: ["extracted_skill_id"]
+            isOneToOne: false
+            referencedRelation: "extracted_skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skill_profiles: {
+        Row: {
+          completeness_score: number | null
+          created_at: string
+          id: string
+          privacy_level: Database["public"]["Enums"]["privacy_level"] | null
+          total_skills: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completeness_score?: number | null
+          created_at?: string
+          id?: string
+          privacy_level?: Database["public"]["Enums"]["privacy_level"] | null
+          total_skills?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completeness_score?: number | null
+          created_at?: string
+          id?: string
+          privacy_level?: Database["public"]["Enums"]["privacy_level"] | null
+          total_skills?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skill_taxonomy: {
+        Row: {
+          aliases: string[] | null
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          skill_name: string
+          subcategory: string | null
+        }
+        Insert: {
+          aliases?: string[] | null
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          skill_name: string
+          subcategory?: string | null
+        }
+        Update: {
+          aliases?: string[] | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          skill_name?: string
+          subcategory?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +271,23 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      evidence_type:
+        | "explicit_mention"
+        | "code_repository"
+        | "project"
+        | "certification"
+        | "endorsement"
+        | "achievement"
+        | "tool_usage"
+      privacy_level: "public" | "internal" | "private"
+      proficiency_level: "beginner" | "intermediate" | "advanced" | "expert"
+      source_type:
+        | "cv"
+        | "linkedin"
+        | "github"
+        | "blog"
+        | "performance_review"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +414,26 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      evidence_type: [
+        "explicit_mention",
+        "code_repository",
+        "project",
+        "certification",
+        "endorsement",
+        "achievement",
+        "tool_usage",
+      ],
+      privacy_level: ["public", "internal", "private"],
+      proficiency_level: ["beginner", "intermediate", "advanced", "expert"],
+      source_type: [
+        "cv",
+        "linkedin",
+        "github",
+        "blog",
+        "performance_review",
+        "other",
+      ],
+    },
   },
 } as const
