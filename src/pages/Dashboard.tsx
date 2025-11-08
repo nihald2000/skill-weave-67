@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Upload, User, LogOut, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { CVUpload } from "@/components/CVUpload";
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
@@ -167,20 +168,19 @@ const Dashboard = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-start gap-4">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <span className="text-primary font-bold">1</span>
+            <div className="space-y-4">
+              <div className="flex items-start gap-4">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-primary font-bold">1</span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold mb-1">Upload Your CV/Resume</h3>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Upload your CV to extract explicit skills and experience
+                  </p>
+                </div>
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold mb-1">Upload Your CV/Resume</h3>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Upload your CV to extract explicit skills and experience
-                </p>
-                <Button variant="outline" size="sm" disabled>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload CV (Coming Soon)
-                </Button>
-              </div>
+              <CVUpload onUploadSuccess={fetchUserData} />
             </div>
 
             <div className="flex items-start gap-4">

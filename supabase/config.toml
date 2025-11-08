@@ -1,1 +1,4 @@
 project_id = "duzjbempgeabjmhhnbex"
+
+[functions.process-cv]
+verify_jwt = true
