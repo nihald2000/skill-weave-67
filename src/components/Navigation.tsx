@@ -1,9 +1,13 @@
 import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
@@ -32,10 +36,29 @@ export const Navigation = () => {
           </div>
           
           <div className="hidden md:flex items-center gap-4">
-            <Button variant="ghost">Sign In</Button>
-            <Button className="bg-gradient-accent hover:opacity-90 transition-opacity">
-              Get Started
-            </Button>
+            {user ? (
+              <>
+                <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+                  Dashboard
+                </Button>
+                <Button variant="ghost" onClick={signOut}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={() => navigate("/auth")}>
+                  Sign In
+                </Button>
+                <Button 
+                  className="bg-gradient-accent hover:opacity-90 transition-opacity"
+                  onClick={() => navigate("/auth")}
+                >
+                  Get Started
+                </Button>
+              </>
+            )}
           </div>
           
           <button 
@@ -61,8 +84,26 @@ export const Navigation = () => {
               <a href="#docs" className="text-muted-foreground hover:text-foreground transition-colors">
                 Docs
               </a>
-              <Button variant="ghost" className="w-full">Sign In</Button>
-              <Button className="w-full bg-gradient-accent">Get Started</Button>
+              {user ? (
+                <>
+                  <Button variant="ghost" className="w-full" onClick={() => navigate("/dashboard")}>
+                    Dashboard
+                  </Button>
+                  <Button variant="ghost" className="w-full" onClick={signOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" className="w-full" onClick={() => navigate("/auth")}>
+                    Sign In
+                  </Button>
+                  <Button className="w-full bg-gradient-accent" onClick={() => navigate("/auth")}>
+                    Get Started
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         )}
