@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, Upload, User, LogOut, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CVUpload } from "@/components/CVUpload";
@@ -13,6 +14,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [skillProfile, setSkillProfile] = useState<any>(null);
+  const [extractedSkills, setExtractedSkills] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
@@ -56,6 +58,17 @@ const Dashboard = () => {
         setSkillProfile(newProfile);
       } else {
         setSkillProfile(skillProfileData);
+      }
+
+      // Fetch extracted skills if profile exists
+      if (skillProfileData?.id) {
+        const { data: skillsData } = await supabase
+          .from("extracted_skills")
+          .select("*")
+          .eq("skill_profile_id", skillProfileData.id)
+          .order("confidence_score", { ascending: false });
+        
+        setExtractedSkills(skillsData || []);
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
@@ -210,7 +223,7 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Skills Section (Empty State) */}
+        {/* Skills Section */}
         <Card>
           <CardHeader>
             <CardTitle>Your Skills</CardTitle>
@@ -219,13 +232,54 @@ const Dashboard = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-12">
-              <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No skills yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Upload your CV or connect data sources to start discovering your skills
-              </p>
-            </div>
+            {extractedSkills.length === 0 ? (
+              <div className="text-center py-12">
+                <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No skills yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Upload your CV or connect data sources to start discovering your skills
+                </p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Skill</TableHead>
+                    <TableHead>Proficiency</TableHead>
+                    <TableHead>Confidence</TableHead>
+                    <TableHead>Experience</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {extractedSkills.map((skill) => (
+                    <TableRow key={skill.id}>
+                      <TableCell className="font-medium">{skill.skill_name}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="capitalize">
+                          {skill.proficiency_level || "N/A"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 bg-secondary h-2 rounded-full overflow-hidden max-w-[100px]">
+                            <div 
+                              className="bg-primary h-full" 
+                              style={{ width: `${skill.confidence_score * 100}%` }}
+                            />
+                          </div>
+                          <span className="text-sm text-muted-foreground">
+                            {Math.round(skill.confidence_score * 100)}%
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {skill.years_experience ? `${skill.years_experience} years` : "N/A"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>
