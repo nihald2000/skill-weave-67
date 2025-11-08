@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Upload, User, LogOut, TrendingUp } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Loader2, Upload, User, LogOut, TrendingUp, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CVUpload } from "@/components/CVUpload";
 
@@ -16,6 +18,8 @@ const Dashboard = () => {
   const [skillProfile, setSkillProfile] = useState<any>(null);
   const [extractedSkills, setExtractedSkills] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [proficiencyFilter, setProficiencyFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   useEffect(() => {
     if (!loading && !user) {
@@ -80,6 +84,14 @@ const Dashboard = () => {
   const handleSignOut = async () => {
     await signOut();
   };
+
+  const filteredSkills = useMemo(() => {
+    return extractedSkills.filter((skill) => {
+      const matchesProficiency = proficiencyFilter === "all" || skill.proficiency_level === proficiencyFilter;
+      const matchesSearch = skill.skill_name.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesProficiency && matchesSearch;
+    });
+  }, [extractedSkills, proficiencyFilter, searchQuery]);
 
   if (loading || loadingData) {
     return (
@@ -241,7 +253,37 @@ const Dashboard = () => {
                 </p>
               </div>
             ) : (
-              <Table>
+              <>
+                <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search skills..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  <Select value={proficiencyFilter} onValueChange={setProficiencyFilter}>
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <SelectValue placeholder="Filter by proficiency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Levels</SelectItem>
+                      <SelectItem value="beginner">Beginner</SelectItem>
+                      <SelectItem value="intermediate">Intermediate</SelectItem>
+                      <SelectItem value="advanced">Advanced</SelectItem>
+                      <SelectItem value="expert">Expert</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {filteredSkills.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">No skills match your filters</p>
+                  </div>
+                ) : (
+                  <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Skill</TableHead>
@@ -251,7 +293,7 @@ const Dashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {extractedSkills.map((skill) => (
+                  {filteredSkills.map((skill) => (
                     <TableRow key={skill.id}>
                       <TableCell className="font-medium">{skill.skill_name}</TableCell>
                       <TableCell>
@@ -279,6 +321,8 @@ const Dashboard = () => {
                   ))}
                 </TableBody>
               </Table>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
