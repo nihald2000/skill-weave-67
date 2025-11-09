@@ -22,7 +22,7 @@ export const CTA = () => {
                   size="lg" 
                   variant="secondary" 
                   className="group"
-                  onClick={() => navigate("/auth")}
+                  onClick={() => navigate("/signup")}
                 >
                   Start Free Trial
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />

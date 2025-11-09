@@ -27,7 +27,7 @@ export const Hero = () => {
             <Button 
               size="lg" 
               className="bg-gradient-primary hover:opacity-90 transition-opacity group"
-              onClick={() => navigate("/auth")}
+              onClick={() => navigate("/signup")}
             >
               Get Started
               <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />

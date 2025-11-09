@@ -48,12 +48,12 @@ const Navigation = () => {
               </>
             ) : (
               <>
-                <Button variant="ghost" onClick={() => navigate("/auth")}>
+                <Button variant="ghost" onClick={() => navigate("/login")}>
                   Sign In
                 </Button>
                 <Button 
                   className="bg-gradient-accent hover:opacity-90 transition-opacity"
-                  onClick={() => navigate("/auth")}
+                  onClick={() => navigate("/signup")}
                 >
                   Get Started
                 </Button>
@@ -96,10 +96,10 @@ const Navigation = () => {
                 </>
               ) : (
                 <>
-                  <Button variant="ghost" className="w-full" onClick={() => navigate("/auth")}>
+                  <Button variant="ghost" className="w-full" onClick={() => navigate("/login")}>
                     Sign In
                   </Button>
-                  <Button className="w-full bg-gradient-accent" onClick={() => navigate("/auth")}>
+                  <Button className="w-full bg-gradient-accent" onClick={() => navigate("/signup")}>
                     Get Started
                   </Button>
                 </>
