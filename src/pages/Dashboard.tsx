@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,17 +6,17 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Loader2, Upload, User, LogOut, TrendingUp, Search } from "lucide-react";
+import { Loader2, Upload, User, TrendingUp, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CVUpload } from "@/components/CVUpload";
 import { SkillDetailModal } from "@/components/SkillDetailModal";
 import { SkillsVisualization } from "@/components/SkillsVisualization";
 import { AddSkillDialog } from "@/components/AddSkillDialog";
 import { ExportSkillsDialog } from "@/components/ExportSkillsDialog";
+import { Navigation } from "@/components/Navigation";
 
 const Dashboard = () => {
-  const { user, loading, signOut } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [skillProfile, setSkillProfile] = useState<any>(null);
   const [extractedSkills, setExtractedSkills] = useState<any[]>([]);
@@ -28,12 +27,6 @@ const Dashboard = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [addSkillDialogOpen, setAddSkillDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
-
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate("/auth");
-    }
-  }, [user, loading, navigate]);
 
   useEffect(() => {
     if (user) {
@@ -81,10 +74,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-  };
-
   const handleSkillClick = (skill: any) => {
     setSelectedSkill(skill);
     setModalOpen(true);
@@ -98,7 +87,7 @@ const Dashboard = () => {
     });
   }, [extractedSkills, proficiencyFilter, searchQuery]);
 
-  if (loading || loadingData) {
+  if (loadingData) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -106,32 +95,9 @@ const Dashboard = () => {
     );
   }
 
-  if (!user) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">S</span>
-              </div>
-              <span className="text-xl font-bold text-foreground">SkillSense</span>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navigation />
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">

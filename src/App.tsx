@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import TeamSkills from "./pages/TeamSkills";
 import SkillGapAnalysis from "./pages/SkillGapAnalysis";
 import NotFound from "./pages/NotFound";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -22,14 +23,46 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/* Public routes */}
           <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/team-skills" element={<TeamSkills />} />
-          <Route path="/skill-gap" element={<SkillGapAnalysis />} />
+          <Route path="/auth" element={<Auth />} />
+          
+          {/* Protected routes */}
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedRoute>
+                <Onboarding />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/team-skills"
+            element={
+              <ProtectedRoute>
+                <TeamSkills />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/skill-gap"
+            element={
+              <ProtectedRoute>
+                <SkillGapAnalysis />
+              </ProtectedRoute>
+            }
+          />
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

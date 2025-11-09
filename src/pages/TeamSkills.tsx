@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -16,7 +15,6 @@ import { Navigation } from "@/components/Navigation";
 const COLORS = ["hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--accent))", "#8884d8", "#82ca9d", "#ffc658"];
 
 export default function TeamSkills() {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -31,12 +29,8 @@ export default function TeamSkills() {
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-      navigate("/auth");
-      return;
-    }
     fetchOrganizations();
-  }, [user, navigate]);
+  }, []);
 
   useEffect(() => {
     if (selectedOrg) {

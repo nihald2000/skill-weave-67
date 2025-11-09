@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -29,15 +29,9 @@ export default function Onboarding() {
   const [githubUsername, setGithubUsername] = useState("");
   const [errors, setErrors] = useState<Partial<OnboardingFormData>>({});
   const [saving, setSaving] = useState(false);
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate("/login");
-    }
-  }, [user, loading, navigate]);
 
   const totalSteps = 3;
   const progress = (step / totalSteps) * 100;
@@ -213,14 +207,6 @@ export default function Onboarding() {
       navigate("/dashboard");
     }
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">

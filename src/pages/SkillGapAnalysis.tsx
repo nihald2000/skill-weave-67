@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Navigation } from "@/components/Navigation";
 
 export default function SkillGapAnalysis() {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -36,13 +34,9 @@ export default function SkillGapAnalysis() {
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-      navigate("/auth");
-      return;
-    }
     fetchJobRequirements();
     fetchUserSkills();
-  }, [user, navigate]);
+  }, []);
 
   useEffect(() => {
     if (selectedJob) {
