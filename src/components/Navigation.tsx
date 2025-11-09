@@ -51,6 +51,9 @@ const Navigation = () => {
                 <button onClick={() => navigate("/cv-enhance")} className="text-muted-foreground hover:text-foreground transition-colors">
                   CV Enhance
                 </button>
+                <button onClick={() => navigate("/github")} className="text-muted-foreground hover:text-foreground transition-colors">
+                  GitHub
+                </button>
               </>
             )}
           </div>
@@ -101,6 +104,10 @@ const Navigation = () => {
                   <DropdownMenuItem onClick={() => navigate("/cv-enhance")}>
                     <Settings className="mr-2 h-4 w-4" />
                     CV Enhance
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/github")}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    GitHub
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={signOut} className="text-destructive">
@@ -157,6 +164,9 @@ const Navigation = () => {
                   </button>
                   <button onClick={() => navigate("/cv-enhance")} className="text-muted-foreground hover:text-foreground transition-colors text-left">
                     CV Enhance
+                  </button>
+                  <button onClick={() => navigate("/github")} className="text-muted-foreground hover:text-foreground transition-colors text-left">
+                    GitHub
                   </button>
                 </>
               )}

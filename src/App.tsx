@@ -13,6 +13,7 @@ import TeamSkills from "./pages/TeamSkills";
 import SkillGapAnalysis from "./pages/SkillGapAnalysis";
 import JobMatcher from "./pages/JobMatcher";
 import CVEnhancer from "./pages/CVEnhancer";
+import GitHubIntegration from "./pages/GitHubIntegration";
 import Results from "./pages/Results";
 import SkillsDashboard from "./pages/SkillsDashboard";
 import NotFound from "./pages/NotFound";
@@ -79,6 +80,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <CVEnhancer />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/github"
+            element={
+              <ProtectedRoute>
+                <GitHubIntegration />
               </ProtectedRoute>
             }
           />

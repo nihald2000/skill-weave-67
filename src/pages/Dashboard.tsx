@@ -229,8 +229,8 @@ const Dashboard = () => {
         {extractedSkills.length > 0 && (
           <Card className="mb-8 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/20">
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex-1">
                   <h3 className="text-lg font-semibold text-foreground mb-1">
                     Enhance Your Resume
                   </h3>
@@ -238,7 +238,7 @@ const Dashboard = () => {
                     AI-powered resume optimization to highlight your skills and achievements
                   </p>
                 </div>
-                <Button onClick={() => navigate("/cv-enhance")} size="lg" className="bg-purple-500 hover:bg-purple-600">
+                <Button onClick={() => navigate("/cv-enhance")} size="lg" className="bg-purple-500 hover:bg-purple-600 w-full sm:w-auto">
                   Enhance CV
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
@@ -246,6 +246,26 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Call to Action - GitHub Integration */}
+        <Card className="mb-8 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/20">
+          <CardContent className="pt-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-foreground mb-1">
+                  Import Skills from GitHub
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Automatically discover coding skills from your GitHub repositories
+                </p>
+              </div>
+              <Button onClick={() => navigate("/github")} size="lg" className="bg-blue-500 hover:bg-blue-600 w-full sm:w-auto">
+                Connect GitHub
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Skills Section */}
         <Card>
