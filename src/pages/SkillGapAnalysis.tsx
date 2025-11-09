@@ -93,8 +93,10 @@ export default function SkillGapAnalysis() {
   const [matchAnalysis, setMatchAnalysis] = useState<MatchAnalysis[]>([]);
 
   useEffect(() => {
-    fetchUserSkills();
-  }, []);
+    if (user) {
+      fetchUserSkills();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (userSkills.length > 0) {
@@ -103,11 +105,16 @@ export default function SkillGapAnalysis() {
   }, [selectedRole, userSkills]);
 
   const fetchUserSkills = async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     const { data, error } = await supabase
       .from("skills")
       .select("*")
-      .eq("user_id", user?.id);
+      .eq("user_id", user.id);
 
     if (error) {
       toast({
