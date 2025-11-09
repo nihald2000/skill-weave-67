@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
-export const Navigation = () => {
+const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -111,3 +111,6 @@ export const Navigation = () => {
     </nav>
   );
 };
+
+export { Navigation };
+export default Navigation;
