@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Upload, FileText, Loader2, CheckCircle, XCircle, AlertCircle, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,12 +8,15 @@ import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { analyzeDocument } from "@/utils/analyzeDocument";
+import { toast as sonnerToast } from "sonner";
 
 interface FileUploadState {
   file: File;
-  status: "pending" | "uploading" | "processing" | "success" | "error";
+  status: "pending" | "uploading" | "extracting" | "analyzing" | "success" | "error";
   progress: number;
   error?: string;
+  documentId?: string;
 }
 
 interface ResumeUploadProps {
@@ -23,6 +27,7 @@ export const ResumeUpload = ({ onUploadSuccess }: ResumeUploadProps) => {
   const [uploadQueue, setUploadQueue] = useState<FileUploadState[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const validateFile = (file: File): string | null => {
     if (file.type !== "application/pdf") {
@@ -57,7 +62,7 @@ export const ResumeUpload = ({ onUploadSuccess }: ResumeUploadProps) => {
       if (uploadError) throw uploadError;
 
       setUploadQueue(prev => prev.map((f, i) => 
-        i === index ? { ...f, progress: 50 } : f
+        i === index ? { ...f, progress: 30 } : f
       ));
 
       // Get public URL
@@ -66,7 +71,7 @@ export const ResumeUpload = ({ onUploadSuccess }: ResumeUploadProps) => {
         .getPublicUrl(fileName);
 
       // Store metadata in documents table
-      const { error: docError } = await supabase
+      const { data: document, error: docError } = await supabase
         .from("documents")
         .insert({
           user_id: user.id,
@@ -74,27 +79,59 @@ export const ResumeUpload = ({ onUploadSuccess }: ResumeUploadProps) => {
           file_url: publicUrl,
           document_type: "resume",
           processing_status: "processing"
-        });
+        })
+        .select()
+        .single();
 
       if (docError) throw docError;
 
       setUploadQueue(prev => prev.map((f, i) => 
-        i === index ? { ...f, status: "processing" as const, progress: 75 } : f
+        i === index ? { ...f, status: "extracting" as const, progress: 50, documentId: document.id } : f
       ));
 
-      // Call edge function to process resume
-      const { error: functionError } = await supabase.functions.invoke("process-cv", {
-        body: { filePath: fileName, fileName: file.name }
+      // Extract text from PDF
+      const fileBuffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(fileBuffer);
+      let extractedText = "";
+      
+      try {
+        extractedText = new TextDecoder("utf-8", { fatal: false }).decode(uint8Array);
+        extractedText = extractedText
+          .replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      } catch (e) {
+        console.error("Text extraction error:", e);
+        extractedText = new TextDecoder().decode(uint8Array);
+      }
+
+      setUploadQueue(prev => prev.map((f, i) => 
+        i === index ? { ...f, status: "analyzing" as const, progress: 70 } : f
+      ));
+
+      // Analyze document with AI
+      const result = await analyzeDocument({
+        documentId: document.id,
+        extractedText,
+        userId: user.id,
+        onProgress: (message) => {
+          console.log(`[${file.name}] ${message}`);
+        }
       });
 
-      if (functionError) {
-        console.error("Processing error:", functionError);
+      if (!result.success) {
+        throw new Error(result.error || "Analysis failed");
       }
 
       // Mark as success
       setUploadQueue(prev => prev.map((f, i) => 
         i === index ? { ...f, status: "success" as const, progress: 100 } : f
       ));
+
+      // Show success message
+      sonnerToast.success(`✓ ${file.name}`, {
+        description: `Found ${result.skillsCount} skills (${result.explicitSkills} explicit, ${result.implicitSkills} implicit)`,
+      });
 
     } catch (error: any) {
       console.error("Error uploading file:", error);
@@ -125,15 +162,20 @@ export const ResumeUpload = ({ onUploadSuccess }: ResumeUploadProps) => {
 
     setIsProcessing(false);
     
-    const successCount = files.filter(f => f.status === "success").length;
-    const errorCount = files.filter(f => f.status === "error").length;
+    const successCount = uploadQueue.filter(f => f.status === "success").length;
+    const errorCount = uploadQueue.filter(f => f.status === "error").length;
     
     if (successCount > 0) {
       toast({
-        title: `${successCount} resume${successCount > 1 ? 's' : ''} uploaded successfully!`,
-        description: errorCount > 0 ? `${errorCount} file${errorCount > 1 ? 's' : ''} failed to upload` : "Your resumes are being processed.",
+        title: `${successCount} resume${successCount > 1 ? 's' : ''} analyzed successfully!`,
+        description: errorCount > 0 ? `${errorCount} file${errorCount > 1 ? 's' : ''} failed` : "View your results now",
       });
       onUploadSuccess?.();
+      
+      // Redirect to results page after a short delay
+      setTimeout(() => {
+        navigate("/results");
+      }, 2000);
     }
 
     if (errorCount > 0 && successCount === 0) {
@@ -144,7 +186,7 @@ export const ResumeUpload = ({ onUploadSuccess }: ResumeUploadProps) => {
       });
     }
 
-    // Clear successful uploads after 3 seconds
+    // Clear successful uploads after redirect
     setTimeout(() => {
       setUploadQueue(prev => prev.filter(f => f.status !== "success"));
     }, 3000);
@@ -216,7 +258,10 @@ export const ResumeUpload = ({ onUploadSuccess }: ResumeUploadProps) => {
       case "pending":
         return <FileText className="h-4 w-4 text-muted-foreground" />;
       case "uploading":
-      case "processing":
+        return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
+      case "extracting":
+        return <Loader2 className="h-4 w-4 text-purple-500 animate-spin" />;
+      case "analyzing":
         return <Loader2 className="h-4 w-4 text-primary animate-spin" />;
       case "success":
         return <CheckCircle className="h-4 w-4 text-green-500" />;
@@ -231,8 +276,10 @@ export const ResumeUpload = ({ onUploadSuccess }: ResumeUploadProps) => {
         return "Waiting...";
       case "uploading":
         return "Uploading...";
-      case "processing":
-        return "Processing...";
+      case "extracting":
+        return "Extracting text...";
+      case "analyzing":
+        return "Analyzing your skills...";
       case "success":
         return "Complete!";
       case "error":
@@ -321,7 +368,9 @@ export const ResumeUpload = ({ onUploadSuccess }: ResumeUploadProps) => {
                         </span>
                       </div>
                       
-                      {(fileState.status === "uploading" || fileState.status === "processing") && (
+                      {(fileState.status === "uploading" || 
+                        fileState.status === "extracting" || 
+                        fileState.status === "analyzing") && (
                         <Progress value={fileState.progress} className="h-1" />
                       )}
                       

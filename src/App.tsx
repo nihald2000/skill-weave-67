@@ -11,6 +11,7 @@ import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import TeamSkills from "./pages/TeamSkills";
 import SkillGapAnalysis from "./pages/SkillGapAnalysis";
+import Results from "./pages/Results";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -59,6 +60,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <SkillGapAnalysis />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/results"
+            element={
+              <ProtectedRoute>
+                <Results />
               </ProtectedRoute>
             }
           />
