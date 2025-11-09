@@ -11,6 +11,7 @@ import { Loader2, Upload, User, LogOut, TrendingUp, Search } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client";
 import { CVUpload } from "@/components/CVUpload";
 import { SkillDetailModal } from "@/components/SkillDetailModal";
+import { SkillsVisualization } from "@/components/SkillsVisualization";
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
@@ -242,6 +243,9 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Skills Visualization */}
+        <SkillsVisualization skills={extractedSkills} />
 
         {/* Skills Section */}
         <Card>
