@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CVUpload } from "@/components/CVUpload";
 import { SkillDetailModal } from "@/components/SkillDetailModal";
 import { SkillsVisualization } from "@/components/SkillsVisualization";
+import { AddSkillDialog } from "@/components/AddSkillDialog";
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
@@ -24,6 +25,7 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedSkill, setSelectedSkill] = useState<any>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [addSkillDialogOpen, setAddSkillDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -249,11 +251,16 @@ const Dashboard = () => {
 
         {/* Skills Section */}
         <Card>
-          <CardHeader>
-            <CardTitle>Your Skills</CardTitle>
-            <CardDescription>
-              Skills extracted from your professional data
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6">
+            <div>
+              <CardTitle>Your Skills</CardTitle>
+              <CardDescription>
+                Skills extracted from your professional data
+              </CardDescription>
+            </div>
+            <Button onClick={() => setAddSkillDialogOpen(true)}>
+              Add Skill
+            </Button>
           </CardHeader>
           <CardContent>
             {extractedSkills.length === 0 ? (
@@ -352,6 +359,16 @@ const Dashboard = () => {
         onSkillUpdated={fetchUserData}
         onSkillDeleted={fetchUserData}
       />
+
+      {/* Add Skill Dialog */}
+      {skillProfile?.id && (
+        <AddSkillDialog
+          open={addSkillDialogOpen}
+          onOpenChange={setAddSkillDialogOpen}
+          skillProfileId={skillProfile.id}
+          onSkillAdded={fetchUserData}
+        />
+      )}
     </div>
   );
 };
