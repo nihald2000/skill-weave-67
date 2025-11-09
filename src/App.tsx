@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import TeamSkills from "./pages/TeamSkills";
 import SkillGapAnalysis from "./pages/SkillGapAnalysis";
 import JobMatcher from "./pages/JobMatcher";
+import CVEnhancer from "./pages/CVEnhancer";
 import Results from "./pages/Results";
 import SkillsDashboard from "./pages/SkillsDashboard";
 import NotFound from "./pages/NotFound";
@@ -70,6 +71,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <JobMatcher />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cv-enhance"
+            element={
+              <ProtectedRoute>
+                <CVEnhancer />
               </ProtectedRoute>
             }
           />

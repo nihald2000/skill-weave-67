@@ -48,6 +48,9 @@ const Navigation = () => {
                 <button onClick={() => navigate("/job-match")} className="text-muted-foreground hover:text-foreground transition-colors">
                   Job Matcher
                 </button>
+                <button onClick={() => navigate("/cv-enhance")} className="text-muted-foreground hover:text-foreground transition-colors">
+                  CV Enhance
+                </button>
               </>
             )}
           </div>
@@ -94,6 +97,10 @@ const Navigation = () => {
                   <DropdownMenuItem onClick={() => navigate("/job-match")}>
                     <Settings className="mr-2 h-4 w-4" />
                     Job Matcher
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/cv-enhance")}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    CV Enhance
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={signOut} className="text-destructive">
@@ -147,6 +154,9 @@ const Navigation = () => {
                   </button>
                   <button onClick={() => navigate("/job-match")} className="text-muted-foreground hover:text-foreground transition-colors text-left">
                     Job Matcher
+                  </button>
+                  <button onClick={() => navigate("/cv-enhance")} className="text-muted-foreground hover:text-foreground transition-colors text-left">
+                    CV Enhance
                   </button>
                 </>
               )}

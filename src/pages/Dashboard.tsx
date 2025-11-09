@@ -225,6 +225,28 @@ const Dashboard = () => {
           </Card>
         )}
 
+        {/* Call to Action - CV Enhancement */}
+        {extractedSkills.length > 0 && (
+          <Card className="mb-8 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/20">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-1">
+                    Enhance Your Resume
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    AI-powered resume optimization to highlight your skills and achievements
+                  </p>
+                </div>
+                <Button onClick={() => navigate("/cv-enhance")} size="lg" className="bg-purple-500 hover:bg-purple-600">
+                  Enhance CV
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Skills Section */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6">
