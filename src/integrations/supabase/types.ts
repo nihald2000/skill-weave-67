@@ -95,6 +95,7 @@ export type Database = {
         Row: {
           created_at: string
           document_type: string
+          extracted_text: string | null
           file_name: string
           file_url: string
           id: string
@@ -105,6 +106,7 @@ export type Database = {
         Insert: {
           created_at?: string
           document_type: string
+          extracted_text?: string | null
           file_name: string
           file_url: string
           id?: string
@@ -115,6 +117,7 @@ export type Database = {
         Update: {
           created_at?: string
           document_type?: string
+          extracted_text?: string | null
           file_name?: string
           file_url?: string
           id?: string

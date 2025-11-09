@@ -92,8 +92,11 @@ export default function CVEnhancer() {
       setDocuments(docsData || []);
       
       // Load the most recent document's extracted text
-      if (docsData && docsData.length > 0 && docsData[0].extracted_text) {
-        setOriginalText(docsData[0].extracted_text);
+      if (docsData && docsData.length > 0) {
+        const extractedText = (docsData[0] as any).extracted_text;
+        if (extractedText) {
+          setOriginalText(extractedText);
+        }
       }
     }
 

@@ -70,7 +70,7 @@ export const ResumeUpload = ({ onUploadSuccess }: ResumeUploadProps) => {
         .from("resumes")
         .getPublicUrl(fileName);
 
-      // Store metadata in documents table
+      // Store metadata in documents table (will update with extracted text later)
       const { data: document, error: docError } = await supabase
         .from("documents")
         .insert({
@@ -104,6 +104,12 @@ export const ResumeUpload = ({ onUploadSuccess }: ResumeUploadProps) => {
         console.error("Text extraction error:", e);
         extractedText = new TextDecoder().decode(uint8Array);
       }
+
+      // Store extracted text in database for CV enhancer
+      await supabase
+        .from("documents")
+        .update({ extracted_text: extractedText } as any)
+        .eq("id", document.id);
 
       setUploadQueue(prev => prev.map((f, i) => 
         i === index ? { ...f, status: "analyzing" as const, progress: 70 } : f
