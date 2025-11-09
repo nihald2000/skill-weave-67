@@ -187,6 +187,92 @@ export type Database = {
           },
         ]
       }
+      job_match_skills: {
+        Row: {
+          created_at: string
+          id: string
+          is_critical: boolean
+          is_matched: boolean
+          job_match_id: string
+          required_level: string
+          skill_name: string
+          user_confidence: number | null
+          user_proficiency: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_critical?: boolean
+          is_matched?: boolean
+          job_match_id: string
+          required_level?: string
+          skill_name: string
+          user_confidence?: number | null
+          user_proficiency?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_critical?: boolean
+          is_matched?: boolean
+          job_match_id?: string
+          required_level?: string
+          skill_name?: string
+          user_confidence?: number | null
+          user_proficiency?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_match_skills_job_match_id_fkey"
+            columns: ["job_match_id"]
+            isOneToOne: false
+            referencedRelation: "job_matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_matches: {
+        Row: {
+          created_at: string
+          file_url: string | null
+          id: string
+          job_company: string | null
+          job_description: string
+          job_title: string
+          match_score: number
+          matched_skills_count: number
+          missing_skills_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          job_company?: string | null
+          job_description: string
+          job_title: string
+          match_score?: number
+          matched_skills_count?: number
+          missing_skills_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          job_company?: string | null
+          job_description?: string
+          job_title?: string
+          match_score?: number
+          matched_skills_count?: number
+          missing_skills_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       job_requirements: {
         Row: {
           created_at: string

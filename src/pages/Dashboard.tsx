@@ -203,6 +203,28 @@ const Dashboard = () => {
           </Card>
         )}
 
+        {/* Call to Action - Job Matcher */}
+        {extractedSkills.length > 0 && (
+          <Card className="mb-8 bg-gradient-to-r from-green-500/10 to-blue-500/10 border-green-500/20">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-1">
+                    Find Your Perfect Job Match
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Analyze job postings and see how well you match with AI-powered insights
+                  </p>
+                </div>
+                <Button onClick={() => navigate("/job-match")} size="lg" className="bg-green-500 hover:bg-green-600">
+                  Try Job Matcher
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Skills Section */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6">

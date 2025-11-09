@@ -45,6 +45,9 @@ const Navigation = () => {
                 <button onClick={() => navigate("/skill-gap")} className="text-muted-foreground hover:text-foreground transition-colors">
                   Skill Gap
                 </button>
+                <button onClick={() => navigate("/job-match")} className="text-muted-foreground hover:text-foreground transition-colors">
+                  Job Matcher
+                </button>
               </>
             )}
           </div>
@@ -87,6 +90,10 @@ const Navigation = () => {
                   <DropdownMenuItem onClick={() => navigate("/skill-gap")}>
                     <Settings className="mr-2 h-4 w-4" />
                     Skill Gap
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/job-match")}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Job Matcher
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={signOut} className="text-destructive">
@@ -137,6 +144,9 @@ const Navigation = () => {
                   </button>
                   <button onClick={() => navigate("/skill-gap")} className="text-muted-foreground hover:text-foreground transition-colors text-left">
                     Skill Gap
+                  </button>
+                  <button onClick={() => navigate("/job-match")} className="text-muted-foreground hover:text-foreground transition-colors text-left">
+                    Job Matcher
                   </button>
                 </>
               )}

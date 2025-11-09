@@ -11,6 +11,7 @@ import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import TeamSkills from "./pages/TeamSkills";
 import SkillGapAnalysis from "./pages/SkillGapAnalysis";
+import JobMatcher from "./pages/JobMatcher";
 import Results from "./pages/Results";
 import SkillsDashboard from "./pages/SkillsDashboard";
 import NotFound from "./pages/NotFound";
@@ -61,6 +62,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <SkillGapAnalysis />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job-match"
+            element={
+              <ProtectedRoute>
+                <JobMatcher />
               </ProtectedRoute>
             }
           />
