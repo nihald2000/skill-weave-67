@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, Upload, User, LogOut, TrendingUp, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CVUpload } from "@/components/CVUpload";
+import { SkillDetailModal } from "@/components/SkillDetailModal";
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
@@ -20,6 +21,8 @@ const Dashboard = () => {
   const [loadingData, setLoadingData] = useState(true);
   const [proficiencyFilter, setProficiencyFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectedSkill, setSelectedSkill] = useState<any>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -83,6 +86,11 @@ const Dashboard = () => {
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const handleSkillClick = (skill: any) => {
+    setSelectedSkill(skill);
+    setModalOpen(true);
   };
 
   const filteredSkills = useMemo(() => {
@@ -294,7 +302,11 @@ const Dashboard = () => {
                 </TableHeader>
                 <TableBody>
                   {filteredSkills.map((skill) => (
-                    <TableRow key={skill.id}>
+                    <TableRow 
+                      key={skill.id} 
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSkillClick(skill)}
+                    >
                       <TableCell className="font-medium">{skill.skill_name}</TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="capitalize">
@@ -327,6 +339,13 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Skill Detail Modal */}
+      <SkillDetailModal 
+        skill={selectedSkill}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+      />
     </div>
   );
 };
