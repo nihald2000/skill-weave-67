@@ -61,8 +61,12 @@ export default function JobMatcher() {
   } | null>(null);
 
   useEffect(() => {
-    fetchSavedMatches();
-  }, []);
+    if (user?.id) {
+      fetchSavedMatches();
+    } else {
+      setLoading(false);
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     if (selectedMatchId) {
@@ -71,11 +75,13 @@ export default function JobMatcher() {
   }, [selectedMatchId]);
 
   const fetchSavedMatches = async () => {
+    if (!user?.id) return;
+    
     setLoading(true);
     const { data, error } = await supabase
       .from("job_matches")
       .select("*")
-      .eq("user_id", user?.id)
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
     if (error) {
