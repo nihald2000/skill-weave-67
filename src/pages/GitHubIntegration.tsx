@@ -109,14 +109,36 @@ export default function GitHubIntegration() {
     try {
       // Fetch GitHub profile
       const profileRes = await fetch(`https://api.github.com/users/${username}`);
+      
+      // Check for rate limiting
+      const remaining = profileRes.headers.get('X-RateLimit-Remaining');
+      const resetTime = profileRes.headers.get('X-RateLimit-Reset');
+      console.log(`GitHub API Rate Limit - Remaining: ${remaining}, Reset: ${resetTime ? new Date(parseInt(resetTime) * 1000).toLocaleString() : 'N/A'}`);
+      
+      if (profileRes.status === 403) {
+        const resetDate = resetTime ? new Date(parseInt(resetTime) * 1000).toLocaleString() : 'unknown time';
+        throw new Error(`GitHub API rate limit exceeded. Resets at ${resetDate}`);
+      }
+      
       if (!profileRes.ok) {
-        throw new Error("GitHub user not found");
+        throw new Error(profileRes.status === 404 ? "GitHub user not found" : `GitHub API error: ${profileRes.status}`);
       }
       const profileData = await profileRes.json();
       setProfile(profileData);
 
       // Fetch repositories
       const reposRes = await fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=30`);
+      
+      if (reposRes.status === 403) {
+        const resetTime = reposRes.headers.get('X-RateLimit-Reset');
+        const resetDate = resetTime ? new Date(parseInt(resetTime) * 1000).toLocaleString() : 'unknown time';
+        throw new Error(`GitHub API rate limit exceeded. Resets at ${resetDate}`);
+      }
+      
+      if (!reposRes.ok) {
+        throw new Error(`Failed to fetch repositories: ${reposRes.status}`);
+      }
+      
       const reposData = await reposRes.json();
       setRepos(reposData);
 
@@ -343,6 +365,17 @@ export default function GitHubIntegration() {
             <CardDescription>Enter a GitHub username to extract skills from repositories</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+              <div className="flex gap-2">
+                <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-blue-900 dark:text-blue-100">
+                  <p className="font-medium mb-1">GitHub API Rate Limit</p>
+                  <p className="text-blue-700 dark:text-blue-300">
+                    Without authentication, GitHub allows 60 API requests per hour. If you see an error, please wait for the rate limit to reset.
+                  </p>
+                </div>
+              </div>
+            </div>
             <div>
               <Label htmlFor="username">GitHub Username</Label>
               <div className="flex gap-2">
