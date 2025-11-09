@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import TeamSkills from "./pages/TeamSkills";
 import SkillGapAnalysis from "./pages/SkillGapAnalysis";
 import Results from "./pages/Results";
+import SkillsDashboard from "./pages/SkillsDashboard";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -68,6 +69,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Results />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/skills"
+            element={
+              <ProtectedRoute>
+                <SkillsDashboard />
               </ProtectedRoute>
             }
           />

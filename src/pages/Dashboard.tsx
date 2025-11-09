@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Loader2, Upload, User, TrendingUp, Search } from "lucide-react";
+import { Loader2, Upload, User, TrendingUp, Search, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ResumeUpload } from "@/components/ResumeUpload";
 import { DocumentsList } from "@/components/DocumentsList";
@@ -18,6 +19,7 @@ import { Navigation } from "@/components/Navigation";
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [skillProfile, setSkillProfile] = useState<any>(null);
   const [extractedSkills, setExtractedSkills] = useState<any[]>([]);
@@ -178,6 +180,28 @@ const Dashboard = () => {
 
         {/* Skills Visualization */}
         <SkillsVisualization skills={extractedSkills} />
+
+        {/* Call to Action - Skills Dashboard */}
+        {extractedSkills.length > 0 && (
+          <Card className="mb-8 bg-gradient-to-r from-primary/10 to-purple-500/10 border-primary/20">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-1">
+                    Explore Your Skills Dashboard
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Get detailed insights, filter by categories, and view evidence for each skill
+                  </p>
+                </div>
+                <Button onClick={() => navigate("/dashboard/skills")} size="lg">
+                  View Dashboard
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Skills Section */}
         <Card>

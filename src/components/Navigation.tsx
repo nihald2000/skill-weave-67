@@ -36,6 +36,9 @@ const Navigation = () => {
             </a>
             {user && (
               <>
+                <button onClick={() => navigate("/dashboard/skills")} className="text-muted-foreground hover:text-foreground transition-colors">
+                  Skills Dashboard
+                </button>
                 <button onClick={() => navigate("/team-skills")} className="text-muted-foreground hover:text-foreground transition-colors">
                   Team Skills
                 </button>
@@ -72,6 +75,10 @@ const Navigation = () => {
                   <DropdownMenuItem onClick={() => navigate("/dashboard")}>
                     <UserIcon className="mr-2 h-4 w-4" />
                     Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/dashboard/skills")}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Skills Dashboard
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/team-skills")}>
                     <Settings className="mr-2 h-4 w-4" />
@@ -122,6 +129,9 @@ const Navigation = () => {
               </a>
               {user && (
                 <>
+                  <button onClick={() => navigate("/dashboard/skills")} className="text-muted-foreground hover:text-foreground transition-colors text-left">
+                    Skills Dashboard
+                  </button>
                   <button onClick={() => navigate("/team-skills")} className="text-muted-foreground hover:text-foreground transition-colors text-left">
                     Team Skills
                   </button>

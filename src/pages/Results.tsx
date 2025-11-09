@@ -267,6 +267,14 @@ const Results = () => {
           </CardHeader>
           <CardContent className="space-y-3">
             <Button
+              onClick={() => navigate("/dashboard/skills")}
+              className="w-full justify-between"
+            >
+              View Skills Dashboard
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => navigate("/dashboard")}
               className="w-full justify-between"
             >
