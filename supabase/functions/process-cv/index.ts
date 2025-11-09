@@ -45,18 +45,32 @@ serve(async (req) => {
       throw new Error("Failed to download file");
     }
 
-    // Convert file to text (for PDFs, we'll extract text)
+    // Convert file to text
     const fileBuffer = await fileData.arrayBuffer();
     const uint8Array = new Uint8Array(fileBuffer);
     
-    // For text files, convert directly
     let extractedText = "";
+    
+    // For text files, convert directly
     if (fileName.endsWith(".txt")) {
       extractedText = new TextDecoder().decode(uint8Array);
+    } else if (fileName.endsWith(".pdf")) {
+      // For PDFs, use basic extraction by converting to text
+      // Note: This works for text-based PDFs. For scanned PDFs, OCR would be needed
+      try {
+        extractedText = new TextDecoder("utf-8", { fatal: false }).decode(uint8Array);
+        // Remove common PDF artifacts and control characters
+        extractedText = extractedText
+          .replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      } catch (e) {
+        console.error("PDF extraction error:", e);
+        extractedText = new TextDecoder().decode(uint8Array);
+      }
     } else {
-      // For PDFs and other formats, use a simple text extraction
-      // In production, you'd use a PDF parsing library
-      extractedText = new TextDecoder().decode(uint8Array);
+      // For DOC/DOCX and other formats
+      extractedText = new TextDecoder("utf-8", { fatal: false }).decode(uint8Array);
     }
 
     console.log("Extracted text length:", extractedText.length);
@@ -92,27 +106,44 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a skill extraction expert. Analyze CV/resume text and extract professional skills with confidence scores.
-            
-Extract:
-- Technical skills (programming languages, tools, frameworks)
-- Soft skills (leadership, communication)
-- Domain expertise (project management, data analysis)
-- Years of experience (if mentioned)
-- Last used date (if mentioned)
+            content: `You are an expert skill extraction system for CV/resume analysis. Your task is to identify and extract professional skills with high accuracy.
 
-For each skill, provide:
-- skill_name: The skill name (normalized)
-- proficiency_level: beginner, intermediate, advanced, or expert
-- confidence_score: 0.0-1.0 (how confident you are this is a real skill)
-- years_experience: number or null
-- evidence: Brief quote or context from CV
+EXTRACTION RULES:
+1. EXPLICIT SKILLS: Extract clearly mentioned skills (e.g., "Python", "Project Management", "React")
+2. IMPLICIT SKILLS: Infer skills from context (e.g., "led a team of 10" → Leadership)
+3. TECHNICAL SKILLS: Programming languages, tools, frameworks, platforms
+4. SOFT SKILLS: Communication, leadership, problem-solving, teamwork
+5. DOMAIN SKILLS: Industry-specific expertise (finance, healthcare, etc.)
 
-Return ONLY valid JSON array of skills, no other text.`
+CONFIDENCE SCORING (0.0-1.0):
+- 0.9-1.0: Explicitly listed in skills section or mentioned multiple times
+- 0.7-0.89: Clear evidence from job responsibilities or projects
+- 0.5-0.69: Implied from job title or single mention
+- 0.3-0.49: Weak inference from context
+- 0.0-0.29: Speculative (avoid these)
+
+PROFICIENCY ESTIMATION:
+- Expert: 7+ years OR clearly stated expertise OR leadership role using skill
+- Advanced: 4-6 years OR significant project work
+- Intermediate: 2-3 years OR mentioned in recent jobs
+- Beginner: <2 years OR listed without context
+
+IMPORTANT: Only extract real skills with confidence ≥ 0.5. Be conservative and accurate.`
           },
           {
             role: "user",
-            content: `Extract skills from this CV:\n\n${extractedText.slice(0, 8000)}`
+            content: `Extract all skills from this CV/resume. Analyze the entire document carefully:
+
+${extractedText.slice(0, 15000)}
+
+Focus on:
+- Skills explicitly listed in "Skills" sections
+- Technologies mentioned in job descriptions
+- Tools and frameworks used in projects
+- Leadership and soft skills demonstrated in experience
+- Certifications and training completed
+
+Return a comprehensive list of skills with accurate confidence scores and proficiency levels.`
           }
         ],
         tools: [
@@ -195,24 +226,52 @@ Return ONLY valid JSON array of skills, no other text.`
       throw new Error("Failed to get or create skill profile");
     }
 
-    // Insert extracted skills
-    const skillsToInsert = skills.map((skill: any) => ({
-      skill_profile_id: skillProfile!.id,
-      skill_name: skill.skill_name,
-      proficiency_level: skill.proficiency_level,
-      confidence_score: skill.confidence_score,
-      years_experience: skill.years_experience || null,
-      is_hidden: false,
-    }));
+    // Insert extracted skills with evidence
+    const skillsToInsert = skills
+      .filter((skill: any) => skill.confidence_score >= 0.5) // Only high-confidence skills
+      .map((skill: any) => ({
+        skill_profile_id: skillProfile!.id,
+        skill_name: skill.skill_name,
+        proficiency_level: skill.proficiency_level,
+        confidence_score: skill.confidence_score,
+        years_experience: skill.years_experience || null,
+        is_hidden: false,
+      }));
 
     if (skillsToInsert.length > 0) {
-      const { error: skillsError } = await supabase
+      const { data: insertedSkills, error: skillsError } = await supabase
         .from("extracted_skills")
-        .insert(skillsToInsert);
+        .insert(skillsToInsert)
+        .select("id, skill_name");
 
       if (skillsError) {
         console.error("Skills insert error:", skillsError);
         throw skillsError;
+      }
+
+      // Create skill evidence entries
+      const evidenceToInsert = insertedSkills.flatMap((insertedSkill: any) => {
+        const originalSkill = skills.find((s: any) => s.skill_name === insertedSkill.skill_name);
+        if (!originalSkill?.evidence) return [];
+
+        return [{
+          extracted_skill_id: insertedSkill.id,
+          evidence_type: "mention",
+          source_type: "cv",
+          description: originalSkill.evidence,
+          snippet: originalSkill.evidence.slice(0, 500),
+          source_reliability: originalSkill.confidence_score,
+        }];
+      });
+
+      if (evidenceToInsert.length > 0) {
+        const { error: evidenceError } = await supabase
+          .from("skill_evidence")
+          .insert(evidenceToInsert);
+
+        if (evidenceError) {
+          console.error("Evidence insert error:", evidenceError);
+        }
       }
 
       // Update skill profile stats
