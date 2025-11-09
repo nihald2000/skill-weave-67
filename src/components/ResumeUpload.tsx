@@ -1,98 +1,64 @@
 import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, FileText, Loader2, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Upload, FileText, Loader2, CheckCircle, XCircle, AlertCircle, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+interface FileUploadState {
+  file: File;
+  status: "pending" | "uploading" | "processing" | "success" | "error";
+  progress: number;
+  error?: string;
+}
 
 interface ResumeUploadProps {
   onUploadSuccess?: () => void;
 }
 
 export const ResumeUpload = ({ onUploadSuccess }: ResumeUploadProps) => {
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadStatus, setUploadStatus] = useState<"idle" | "success" | "error">("idle");
-  const [errorMessage, setErrorMessage] = useState("");
+  const [uploadQueue, setUploadQueue] = useState<FileUploadState[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
   const validateFile = (file: File): string | null => {
-    // Check file type
     if (file.type !== "application/pdf") {
       return "Only PDF files are allowed";
     }
-    
-    // Check file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
       return "File size must be less than 5MB";
     }
-    
     return null;
   };
 
-  const onDrop = useCallback(async (acceptedFiles: File[], rejectedFiles: any[]) => {
-    if (rejectedFiles.length > 0) {
-      const error = rejectedFiles[0].errors[0];
-      setErrorMessage(error.message);
-      setUploadStatus("error");
-      toast({
-        title: "Invalid file",
-        description: error.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const file = acceptedFiles[0];
-    if (!file) return;
-
-    // Additional validation
-    const validationError = validateFile(file);
-    if (validationError) {
-      setErrorMessage(validationError);
-      setUploadStatus("error");
-      toast({
-        title: "Invalid file",
-        description: validationError,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setUploading(true);
-    setUploadStatus("idle");
-    setUploadProgress(0);
-    setErrorMessage("");
-
+  const uploadSingleFile = async (fileState: FileUploadState, index: number) => {
+    const { file } = fileState;
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Simulate upload progress
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 200);
+      // Update status to uploading
+      setUploadQueue(prev => prev.map((f, i) => 
+        i === index ? { ...f, status: "uploading" as const, progress: 10 } : f
+      ));
 
       // Upload to storage
       const fileExt = "pdf";
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      const fileName = `${user.id}/${Date.now()}_${file.name}`;
       
       const { error: uploadError } = await supabase.storage
         .from("resumes")
         .upload(fileName, file);
 
-      clearInterval(progressInterval);
-
       if (uploadError) throw uploadError;
 
-      setUploadProgress(95);
+      setUploadQueue(prev => prev.map((f, i) => 
+        i === index ? { ...f, progress: 50 } : f
+      ));
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
@@ -112,7 +78,9 @@ export const ResumeUpload = ({ onUploadSuccess }: ResumeUploadProps) => {
 
       if (docError) throw docError;
 
-      setUploadProgress(98);
+      setUploadQueue(prev => prev.map((f, i) => 
+        i === index ? { ...f, status: "processing" as const, progress: 75 } : f
+      ));
 
       // Call edge function to process resume
       const { error: functionError } = await supabase.functions.invoke("process-cv", {
@@ -121,121 +89,270 @@ export const ResumeUpload = ({ onUploadSuccess }: ResumeUploadProps) => {
 
       if (functionError) {
         console.error("Processing error:", functionError);
-        // Don't throw - file is uploaded, processing can be retried
       }
 
-      setUploadProgress(100);
-      setUploadStatus("success");
-      
-      toast({
-        title: "Resume uploaded successfully!",
-        description: "Your resume is being processed. This may take a moment.",
-      });
+      // Mark as success
+      setUploadQueue(prev => prev.map((f, i) => 
+        i === index ? { ...f, status: "success" as const, progress: 100 } : f
+      ));
 
-      setTimeout(() => {
-        setUploadStatus("idle");
-        setUploadProgress(0);
-      }, 3000);
-
-      onUploadSuccess?.();
     } catch (error: any) {
-      console.error("Error uploading resume:", error);
-      setUploading(false);
-      setUploadStatus("error");
-      setErrorMessage(error.message || "Failed to upload resume");
-      
+      console.error("Error uploading file:", error);
+      setUploadQueue(prev => prev.map((f, i) => 
+        i === index ? { 
+          ...f, 
+          status: "error" as const, 
+          progress: 0, 
+          error: error.message || "Upload failed" 
+        } : f
+      ));
+    }
+  };
+
+  const processQueue = async (files: FileUploadState[]) => {
+    setIsProcessing(true);
+    
+    // Process files in parallel (max 3 at a time)
+    const batchSize = 3;
+    for (let i = 0; i < files.length; i += batchSize) {
+      const batch = files.slice(i, i + batchSize);
+      await Promise.all(
+        batch.map((fileState, batchIndex) => 
+          uploadSingleFile(fileState, i + batchIndex)
+        )
+      );
+    }
+
+    setIsProcessing(false);
+    
+    const successCount = files.filter(f => f.status === "success").length;
+    const errorCount = files.filter(f => f.status === "error").length;
+    
+    if (successCount > 0) {
       toast({
-        title: "Upload failed",
-        description: error.message || "Failed to upload resume",
+        title: `${successCount} resume${successCount > 1 ? 's' : ''} uploaded successfully!`,
+        description: errorCount > 0 ? `${errorCount} file${errorCount > 1 ? 's' : ''} failed to upload` : "Your resumes are being processed.",
+      });
+      onUploadSuccess?.();
+    }
+
+    if (errorCount > 0 && successCount === 0) {
+      toast({
+        title: "All uploads failed",
+        description: "Please check the errors and try again",
         variant: "destructive",
       });
-    } finally {
-      setUploading(false);
     }
-  }, [toast, onUploadSuccess]);
+
+    // Clear successful uploads after 3 seconds
+    setTimeout(() => {
+      setUploadQueue(prev => prev.filter(f => f.status !== "success"));
+    }, 3000);
+  };
+
+  const onDrop = useCallback(async (acceptedFiles: File[], rejectedFiles: any[]) => {
+    // Handle rejected files
+    if (rejectedFiles.length > 0) {
+      rejectedFiles.forEach(rejection => {
+        const error = rejection.errors[0];
+        toast({
+          title: `Invalid file: ${rejection.file.name}`,
+          description: error.message,
+          variant: "destructive",
+        });
+      });
+    }
+
+    // Validate and add accepted files to queue
+    const validFiles: FileUploadState[] = [];
+    
+    acceptedFiles.forEach(file => {
+      const validationError = validateFile(file);
+      if (validationError) {
+        toast({
+          title: `Invalid file: ${file.name}`,
+          description: validationError,
+          variant: "destructive",
+        });
+      } else {
+        validFiles.push({
+          file,
+          status: "pending",
+          progress: 0,
+        });
+      }
+    });
+
+    if (validFiles.length === 0) return;
+
+    setUploadQueue(prev => [...prev, ...validFiles]);
+    
+    // Start processing if not already processing
+    if (!isProcessing) {
+      await processQueue(validFiles);
+    }
+  }, [toast, onUploadSuccess, isProcessing]);
+
+  const removeFromQueue = (index: number) => {
+    setUploadQueue(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const clearCompleted = () => {
+    setUploadQueue(prev => prev.filter(f => f.status !== "success"));
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
       "application/pdf": [".pdf"],
     },
-    maxFiles: 1,
-    disabled: uploading,
+    multiple: true,
+    disabled: isProcessing,
     maxSize: 5 * 1024 * 1024, // 5MB
   });
 
+  const getStatusIcon = (status: FileUploadState["status"]) => {
+    switch (status) {
+      case "pending":
+        return <FileText className="h-4 w-4 text-muted-foreground" />;
+      case "uploading":
+      case "processing":
+        return <Loader2 className="h-4 w-4 text-primary animate-spin" />;
+      case "success":
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case "error":
+        return <XCircle className="h-4 w-4 text-destructive" />;
+    }
+  };
+
+  const getStatusText = (status: FileUploadState["status"]) => {
+    switch (status) {
+      case "pending":
+        return "Waiting...";
+      case "uploading":
+        return "Uploading...";
+      case "processing":
+        return "Processing...";
+      case "success":
+        return "Complete!";
+      case "error":
+        return "Failed";
+    }
+  };
+
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="pt-6">
-        <div
-          {...getRootProps()}
-          className={`
-            border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
-            transition-all duration-300 ease-in-out
-            ${isDragActive ? "border-primary bg-primary/5 scale-[1.02]" : "border-border hover:border-primary/50 hover:bg-accent/5"}
-            ${uploading ? "opacity-50 cursor-not-allowed" : ""}
-            ${uploadStatus === "error" ? "border-destructive/50 bg-destructive/5" : ""}
-          `}
-        >
-          <input {...getInputProps()} />
-          
-          <div className="flex flex-col items-center gap-4">
-            {uploading ? (
-              <>
-                <Loader2 className="h-12 w-12 text-primary animate-spin" />
-                <div className="w-full max-w-xs">
-                  <p className="text-lg font-semibold text-foreground mb-2">
-                    Uploading...
-                  </p>
-                  <Progress value={uploadProgress} className="h-2" />
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {uploadProgress}%
+    <div className="space-y-4">
+      <Card className="overflow-hidden">
+        <CardContent className="pt-6">
+          <div
+            {...getRootProps()}
+            className={`
+              border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
+              transition-all duration-300 ease-in-out
+              ${isDragActive ? "border-primary bg-primary/5 scale-[1.02]" : "border-border hover:border-primary/50 hover:bg-accent/5"}
+              ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}
+            `}
+          >
+            <input {...getInputProps()} />
+            
+            <div className="flex flex-col items-center gap-4">
+              {isDragActive ? (
+                <Upload className="h-12 w-12 text-primary animate-bounce" />
+              ) : (
+                <FileText className="h-12 w-12 text-muted-foreground" />
+              )}
+              <div>
+                <p className="text-lg font-semibold text-foreground mb-1">
+                  {isDragActive ? "Drop your resumes here" : "Upload resumes"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Drag & drop multiple files or click to browse
+                </p>
+                <div className="flex items-center justify-center gap-2 mt-3">
+                  <AlertCircle className="h-3 w-3 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground">
+                    PDF only • Max 5MB per file • Multiple files supported
                   </p>
                 </div>
-              </>
-            ) : uploadStatus === "success" ? (
-              <>
-                <CheckCircle className="h-12 w-12 text-green-500 animate-in zoom-in duration-300" />
-                <div>
-                  <p className="text-lg font-semibold text-foreground">Success!</p>
-                  <p className="text-sm text-muted-foreground">Your resume is being analyzed</p>
-                </div>
-              </>
-            ) : uploadStatus === "error" ? (
-              <>
-                <XCircle className="h-12 w-12 text-destructive animate-in zoom-in duration-300" />
-                <div>
-                  <p className="text-lg font-semibold text-foreground">Upload failed</p>
-                  <p className="text-sm text-destructive">{errorMessage}</p>
-                  <p className="text-xs text-muted-foreground mt-2">Please try again</p>
-                </div>
-              </>
-            ) : (
-              <>
-                {isDragActive ? (
-                  <Upload className="h-12 w-12 text-primary animate-bounce" />
-                ) : (
-                  <FileText className="h-12 w-12 text-muted-foreground" />
-                )}
-                <div>
-                  <p className="text-lg font-semibold text-foreground mb-1">
-                    {isDragActive ? "Drop your resume here" : "Upload your resume"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Drag & drop or click to browse
-                  </p>
-                  <div className="flex items-center justify-center gap-2 mt-3">
-                    <AlertCircle className="h-3 w-3 text-muted-foreground" />
-                    <p className="text-xs text-muted-foreground">
-                      PDF only • Max 5MB
-                    </p>
-                  </div>
-                </div>
-              </>
-            )}
+              </div>
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Upload Queue */}
+      {uploadQueue.length > 0 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-foreground">
+                Upload Queue ({uploadQueue.length})
+              </h3>
+              {uploadQueue.some(f => f.status === "success") && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearCompleted}
+                  className="text-xs"
+                >
+                  Clear Completed
+                </Button>
+              )}
+            </div>
+            
+            <ScrollArea className={uploadQueue.length > 3 ? "h-[240px]" : ""}>
+              <div className="space-y-3">
+                {uploadQueue.map((fileState, index) => (
+                  <div
+                    key={`${fileState.file.name}-${index}`}
+                    className="flex items-center gap-3 p-3 border rounded-lg bg-card"
+                  >
+                    <div className="flex-shrink-0">
+                      {getStatusIcon(fileState.status)}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {fileState.file.name}
+                        </p>
+                        <span className="text-xs text-muted-foreground ml-2 flex-shrink-0">
+                          {getStatusText(fileState.status)}
+                        </span>
+                      </div>
+                      
+                      {(fileState.status === "uploading" || fileState.status === "processing") && (
+                        <Progress value={fileState.progress} className="h-1" />
+                      )}
+                      
+                      {fileState.error && (
+                        <p className="text-xs text-destructive mt-1">
+                          {fileState.error}
+                        </p>
+                      )}
+                      
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {(fileState.file.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                    
+                    {fileState.status === "pending" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="flex-shrink-0 h-8 w-8"
+                        onClick={() => removeFromQueue(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
