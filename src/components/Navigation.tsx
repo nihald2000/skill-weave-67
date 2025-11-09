@@ -21,18 +21,18 @@ export const Navigation = () => {
           </div>
           
           <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
+            <a href="/#features" className="text-muted-foreground hover:text-foreground transition-colors">
               Features
             </a>
-            <a href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors">
+            <a href="/#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors">
               How It Works
             </a>
-            <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
-              Pricing
-            </a>
-            <a href="#docs" className="text-muted-foreground hover:text-foreground transition-colors">
-              Docs
-            </a>
+            <button onClick={() => navigate("/team-skills")} className="text-muted-foreground hover:text-foreground transition-colors">
+              Team Skills
+            </button>
+            <button onClick={() => navigate("/skill-gap")} className="text-muted-foreground hover:text-foreground transition-colors">
+              Skill Gap
+            </button>
           </div>
           
           <div className="hidden md:flex items-center gap-4">
@@ -72,18 +72,18 @@ export const Navigation = () => {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-border">
             <div className="flex flex-col gap-4">
-              <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
+              <a href="/#features" className="text-muted-foreground hover:text-foreground transition-colors">
                 Features
               </a>
-              <a href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors">
+              <a href="/#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors">
                 How It Works
               </a>
-              <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
-                Pricing
-              </a>
-              <a href="#docs" className="text-muted-foreground hover:text-foreground transition-colors">
-                Docs
-              </a>
+              <button onClick={() => navigate("/team-skills")} className="text-muted-foreground hover:text-foreground transition-colors text-left">
+                Team Skills
+              </button>
+              <button onClick={() => navigate("/skill-gap")} className="text-muted-foreground hover:text-foreground transition-colors text-left">
+                Skill Gap
+              </button>
               {user ? (
                 <>
                   <Button variant="ghost" className="w-full" onClick={() => navigate("/dashboard")}>
