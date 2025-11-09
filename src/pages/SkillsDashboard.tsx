@@ -9,10 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, TrendingUp, Eye, EyeOff, FileText, Target, Search, ChevronDown, CheckCircle2, Sparkles } from "lucide-react";
+import { Loader2, TrendingUp, Eye, EyeOff, FileText, Target, Search, ChevronDown, CheckCircle2, Sparkles, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { exportSkillsDashboardPDF } from "@/utils/exportSkillsDashboardPDF";
+import { toast as sonnerToast } from "sonner";
 
 interface Skill {
   id: string;
@@ -49,6 +51,8 @@ const SkillsDashboard = () => {
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [skillEvidence, setSkillEvidence] = useState<SkillEvidence[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     if (user) {
@@ -60,6 +64,15 @@ const SkillsDashboard = () => {
     try {
       setLoading(true);
       
+      // Fetch profile
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user?.id)
+        .single();
+      
+      setProfile(profileData);
+
       // Fetch skills
       const { data: skillsData, error: skillsError } = await supabase
         .from("skills")
@@ -111,6 +124,30 @@ const SkillsDashboard = () => {
         description: error.message,
         variant: "destructive",
       });
+    }
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      setExporting(true);
+      sonnerToast.info("Generating PDF report...", {
+        description: "This may take a few moments",
+      });
+
+      const userName = profile?.full_name || user?.email || "User";
+      
+      await exportSkillsDashboardPDF(skills, stats, userName);
+      
+      sonnerToast.success("PDF exported successfully!", {
+        description: "Your skills dashboard has been downloaded",
+      });
+    } catch (error: any) {
+      console.error("Error exporting PDF:", error);
+      sonnerToast.error("Export failed", {
+        description: error.message || "Failed to generate PDF",
+      });
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -222,11 +259,31 @@ const SkillsDashboard = () => {
 
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">Skills Dashboard</h1>
-          <p className="text-muted-foreground">
-            Comprehensive overview of your professional skills
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-foreground mb-2">Skills Dashboard</h1>
+            <p className="text-muted-foreground">
+              Comprehensive overview of your professional skills
+            </p>
+          </div>
+          <Button 
+            onClick={handleExportPDF} 
+            disabled={exporting || skills.length === 0}
+            size="lg"
+            className="gap-2"
+          >
+            {exporting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" />
+                Export PDF
+              </>
+            )}
+          </Button>
         </div>
 
         {/* Summary Cards */}
