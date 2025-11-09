@@ -35,10 +35,14 @@ serve(async (req) => {
 
     console.log("Processing CV for user:", user.id);
 
-    // Download the file from storage
+    // Download the file from storage (supports both 'cvs' and 'resumes' buckets)
+    // Determine which bucket to use based on the file path
+    const bucketName = filePath.startsWith('resumes/') ? 'resumes' : 'cvs';
+    const actualPath = filePath.replace('resumes/', '').replace('cvs/', '');
+    
     const { data: fileData, error: downloadError } = await supabase.storage
-      .from("cvs")
-      .download(filePath);
+      .from(bucketName)
+      .download(actualPath);
 
     if (downloadError) {
       console.error("Download error:", downloadError);

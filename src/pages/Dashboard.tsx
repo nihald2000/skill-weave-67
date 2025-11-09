@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Loader2, Upload, User, TrendingUp, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { CVUpload } from "@/components/CVUpload";
+import { ResumeUpload } from "@/components/ResumeUpload";
+import { DocumentsList } from "@/components/DocumentsList";
 import { SkillDetailModal } from "@/components/SkillDetailModal";
 import { SkillsVisualization } from "@/components/SkillsVisualization";
 import { AddSkillDialog } from "@/components/AddSkillDialog";
@@ -27,6 +28,7 @@ const Dashboard = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [addSkillDialogOpen, setAddSkillDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [refreshDocuments, setRefreshDocuments] = useState(0);
 
   useEffect(() => {
     if (user) {
@@ -155,56 +157,24 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Getting Started */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Getting Started</CardTitle>
-            <CardDescription>
-              Start building your skill profile by uploading your professional data
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-4">
-              <div className="flex items-start gap-4">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-primary font-bold">1</span>
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold mb-1">Upload Your CV/Resume</h3>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Upload your CV to extract explicit skills and experience
-                  </p>
-                </div>
-              </div>
-              <CVUpload onUploadSuccess={fetchUserData} />
-            </div>
+        {/* Resume Upload Section */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4">Upload Resume</h2>
+          <ResumeUpload 
+            onUploadSuccess={() => {
+              fetchUserData();
+              setRefreshDocuments(prev => prev + 1);
+            }} 
+          />
+        </div>
 
-            <div className="flex items-start gap-4">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <span className="text-primary font-bold">2</span>
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold mb-1">Connect Data Sources</h3>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Link your LinkedIn, GitHub, or other professional profiles
-                </p>
-                <Badge variant="secondary">Coming Soon</Badge>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <span className="text-primary font-bold">3</span>
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold mb-1">Review Your Skill Profile</h3>
-                <p className="text-sm text-muted-foreground">
-                  Our AI will analyze your data and discover hidden skills with confidence scores
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Documents List */}
+        <div className="mb-8">
+          <DocumentsList 
+            refreshTrigger={refreshDocuments}
+            onDocumentDeleted={fetchUserData}
+          />
+        </div>
 
         {/* Skills Visualization */}
         <SkillsVisualization skills={extractedSkills} />
