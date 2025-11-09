@@ -13,6 +13,7 @@ import { CVUpload } from "@/components/CVUpload";
 import { SkillDetailModal } from "@/components/SkillDetailModal";
 import { SkillsVisualization } from "@/components/SkillsVisualization";
 import { AddSkillDialog } from "@/components/AddSkillDialog";
+import { ExportSkillsDialog } from "@/components/ExportSkillsDialog";
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
@@ -26,6 +27,7 @@ const Dashboard = () => {
   const [selectedSkill, setSelectedSkill] = useState<any>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [addSkillDialogOpen, setAddSkillDialogOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -258,9 +260,18 @@ const Dashboard = () => {
                 Skills extracted from your professional data
               </CardDescription>
             </div>
-            <Button onClick={() => setAddSkillDialogOpen(true)}>
-              Add Skill
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setExportDialogOpen(true)}
+                disabled={extractedSkills.length === 0}
+              >
+                Export PDF
+              </Button>
+              <Button onClick={() => setAddSkillDialogOpen(true)}>
+                Add Skill
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {extractedSkills.length === 0 ? (
@@ -369,6 +380,15 @@ const Dashboard = () => {
           onSkillAdded={fetchUserData}
         />
       )}
+
+      {/* Export Skills Dialog */}
+      <ExportSkillsDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        profile={profile}
+        skillProfile={skillProfile}
+        skills={extractedSkills}
+      />
     </div>
   );
 };
