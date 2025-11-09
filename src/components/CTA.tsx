@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const CTA = () => {
+  const navigate = useNavigate();
+  
   return (
     <section className="py-20 md:py-28">
       <div className="container mx-auto px-4">
@@ -15,11 +18,24 @@ export const CTA = () => {
                 Join leading organizations using SkillSense to build better teams, close skill gaps, and make smarter hiring decisions.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" variant="secondary" className="group">
+                <Button 
+                  size="lg" 
+                  variant="secondary" 
+                  className="group"
+                  onClick={() => navigate("/auth")}
+                >
                   Start Free Trial
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
-                <Button size="lg" variant="outline" className="bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary">
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary"
+                  onClick={() => {
+                    const howItWorks = document.getElementById("how-it-works");
+                    howItWorks?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                >
                   Schedule Demo
                 </Button>
               </div>
