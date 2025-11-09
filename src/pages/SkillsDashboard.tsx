@@ -15,6 +15,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { exportSkillsDashboardPDF } from "@/utils/exportSkillsDashboardPDF";
 import { toast as sonnerToast } from "sonner";
+import { SkillsDistributionChart } from "@/components/charts/SkillsDistributionChart";
+import { ConfidenceDistributionChart } from "@/components/charts/ConfidenceDistributionChart";
+import { TopSkillsChart } from "@/components/charts/TopSkillsChart";
+import { ProficiencyDonutChart } from "@/components/charts/ProficiencyDonutChart";
+import { SkillSourcesChart } from "@/components/charts/SkillSourcesChart";
 
 interface Skill {
   id: string;
@@ -25,6 +30,7 @@ interface Skill {
   is_explicit: boolean;
   years_experience: number | null;
   created_at: string;
+  source_documents: string[];
 }
 
 interface SkillEvidence {
@@ -81,7 +87,16 @@ const SkillsDashboard = () => {
         .order("confidence_score", { ascending: false });
 
       if (skillsError) throw skillsError;
-      setSkills(skillsData || []);
+      
+      // Type cast source_documents from Json to string[]
+      const typedSkills = (skillsData || []).map(skill => ({
+        ...skill,
+        source_documents: Array.isArray(skill.source_documents) 
+          ? skill.source_documents as string[]
+          : []
+      })) as Skill[];
+      
+      setSkills(typedSkills);
 
       // Fetch documents
       const { data: docsData, error: docsError } = await supabase
@@ -349,6 +364,24 @@ const SkillsDashboard = () => {
               <p className="text-xs text-muted-foreground mt-1">Analyzed successfully</p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Data Visualizations */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <SkillsDistributionChart 
+            skills={skills} 
+            onCategoryClick={(category) => setSelectedCategory(category)}
+          />
+          <ConfidenceDistributionChart skills={skills} />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <TopSkillsChart skills={skills} />
+          <ProficiencyDonutChart skills={skills} />
+        </div>
+
+        <div className="mb-8">
+          <SkillSourcesChart skills={skills} documents={documents} />
         </div>
 
         {/* Filters and Search */}
