@@ -345,6 +345,8 @@ const Dashboard = () => {
         skill={selectedSkill}
         open={modalOpen}
         onOpenChange={setModalOpen}
+        onSkillUpdated={fetchUserData}
+        onSkillDeleted={fetchUserData}
       />
     </div>
   );
