@@ -66,17 +66,24 @@ export default function CVEnhancer() {
   const [enhancement, setEnhancement] = useState<EnhancementResult | null>(null);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
 
   const fetchData = async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     
     // Fetch user's documents
     const { data: docsData, error: docsError } = await supabase
       .from("documents")
       .select("*")
-      .eq("user_id", user?.id)
+      .eq("user_id", user.id)
       .order("upload_date", { ascending: false });
 
     if (docsError) {
@@ -84,11 +91,9 @@ export default function CVEnhancer() {
     } else {
       setDocuments(docsData || []);
       
-      // Try to load the most recent document's text
-      if (docsData && docsData.length > 0) {
-        // In a real scenario, you'd extract text from the document
-        // For now, we'll just set a placeholder
-        setOriginalText("Paste your resume text here or select a document above...");
+      // Load the most recent document's extracted text
+      if (docsData && docsData.length > 0 && docsData[0].extracted_text) {
+        setOriginalText(docsData[0].extracted_text);
       }
     }
 
@@ -96,7 +101,7 @@ export default function CVEnhancer() {
     const { data: skillsData, error: skillsError } = await supabase
       .from("skills")
       .select("*")
-      .eq("user_id", user?.id)
+      .eq("user_id", user.id)
       .order("confidence_score", { ascending: false });
 
     if (skillsError) {
