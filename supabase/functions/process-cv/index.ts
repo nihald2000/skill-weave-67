@@ -75,17 +75,34 @@ serve(async (req) => {
 
     console.log("Extracted text length:", extractedText.length);
 
-    // Save to data_sources
-    const { error: insertError } = await supabase
-      .from("data_sources")
+    // Create analysis session
+    const { data: analysisSession, error: sessionError } = await supabase
+      .from("analysis_sessions")
       .insert({
         user_id: user.id,
-        source_type: "cv",
-        source_name: fileName,
-        file_path: filePath,
-        raw_data: { text: extractedText },
-        processed: false,
-      });
+        session_status: "in_progress",
+        documents_analyzed: 0,
+      })
+      .select()
+      .single();
+
+    if (sessionError) {
+      console.error("Session error:", sessionError);
+      throw sessionError;
+    }
+
+    // Save to documents table
+    const { data: document, error: insertError } = await supabase
+      .from("documents")
+      .insert({
+        user_id: user.id,
+        document_type: "resume",
+        file_name: fileName,
+        file_url: filePath,
+        processing_status: "processing",
+      })
+      .select()
+      .single();
 
     if (insertError) {
       console.error("Insert error:", insertError);
@@ -204,43 +221,39 @@ Return a comprehensive list of skills with accurate confidence scores and profic
 
     console.log("Extracted skills count:", skills.length);
 
-    // Get or create skill profile
-    let { data: skillProfile } = await supabase
-      .from("skill_profiles")
-      .select("id")
-      .eq("user_id", user.id)
-      .single();
+    // Categorize skills automatically
+    const categorizeSkill = (skillName: string): string => {
+      const name = skillName.toLowerCase();
+      const programmingLanguages = ["python", "javascript", "java", "c++", "c#", "ruby", "go", "rust", "swift", "kotlin"];
+      const softSkills = ["leadership", "communication", "teamwork", "problem solving", "critical thinking", "time management"];
+      const tools = ["git", "docker", "kubernetes", "jenkins", "jira", "slack", "aws", "azure", "gcp"];
+      
+      if (programmingLanguages.some(lang => name.includes(lang))) return "language";
+      if (softSkills.some(soft => name.includes(soft))) return "soft_skill";
+      if (tools.some(tool => name.includes(tool))) return "tool";
+      if (name.includes("framework") || name.includes("react") || name.includes("angular") || name.includes("vue")) return "tool";
+      return "technical";
+    };
 
-    if (!skillProfile) {
-      const { data: newProfile, error: profileError } = await supabase
-        .from("skill_profiles")
-        .insert({ user_id: user.id })
-        .select()
-        .single();
-
-      if (profileError) throw profileError;
-      skillProfile = newProfile;
-    }
-
-    if (!skillProfile) {
-      throw new Error("Failed to get or create skill profile");
-    }
-
-    // Insert extracted skills with evidence
+    // Insert extracted skills into new skills table
     const skillsToInsert = skills
-      .filter((skill: any) => skill.confidence_score >= 0.5) // Only high-confidence skills
+      .filter((skill: any) => skill.confidence_score >= 0.5)
       .map((skill: any) => ({
-        skill_profile_id: skillProfile!.id,
+        user_id: user.id,
         skill_name: skill.skill_name,
-        proficiency_level: skill.proficiency_level,
+        skill_category: categorizeSkill(skill.skill_name),
         confidence_score: skill.confidence_score,
+        proficiency_level: skill.proficiency_level,
+        is_explicit: skill.confidence_score >= 0.7,
         years_experience: skill.years_experience || null,
-        is_hidden: false,
+        source_documents: [document!.id],
+        evidence_trail: [{ evidence: skill.evidence, document_id: document!.id }],
       }));
 
+    let hiddenSkills = 0;
     if (skillsToInsert.length > 0) {
       const { data: insertedSkills, error: skillsError } = await supabase
-        .from("extracted_skills")
+        .from("skills")
         .insert(skillsToInsert)
         .select("id, skill_name");
 
@@ -249,18 +262,18 @@ Return a comprehensive list of skills with accurate confidence scores and profic
         throw skillsError;
       }
 
-      // Create skill evidence entries
+      // Create skill evidence entries for new table
       const evidenceToInsert = insertedSkills.flatMap((insertedSkill: any) => {
         const originalSkill = skills.find((s: any) => s.skill_name === insertedSkill.skill_name);
         if (!originalSkill?.evidence) return [];
 
         return [{
-          extracted_skill_id: insertedSkill.id,
-          evidence_type: "mention",
-          source_type: "cv",
-          description: originalSkill.evidence,
-          snippet: originalSkill.evidence.slice(0, 500),
-          source_reliability: originalSkill.confidence_score,
+          skill_id: insertedSkill.id,
+          document_id: document!.id,
+          evidence_type: originalSkill.confidence_score >= 0.7 ? "explicit_mention" : "project_context",
+          evidence_text: originalSkill.evidence,
+          context: `Extracted from ${fileName}`,
+          reliability_score: originalSkill.confidence_score,
         }];
       });
 
@@ -274,24 +287,27 @@ Return a comprehensive list of skills with accurate confidence scores and profic
         }
       }
 
-      // Update skill profile stats
-      const { error: updateError } = await supabase
-        .from("skill_profiles")
-        .update({
-          total_skills: skillsToInsert.length,
-          completeness_score: Math.min(skillsToInsert.length / 20, 1.0),
-        })
-        .eq("id", skillProfile!.id);
-
-      if (updateError) console.error("Profile update error:", updateError);
+      // Count hidden skills (low confidence that we filtered out)
+      hiddenSkills = skills.filter((s: any) => s.confidence_score < 0.5).length;
     }
 
-    // Mark data source as processed
+    // Update document processing status
     await supabase
-      .from("data_sources")
-      .update({ processed: true })
-      .eq("user_id", user.id)
-      .eq("file_path", filePath);
+      .from("documents")
+      .update({ processing_status: "completed" })
+      .eq("id", document!.id);
+
+    // Complete analysis session
+    await supabase
+      .from("analysis_sessions")
+      .update({
+        session_status: "completed",
+        total_skills_found: skillsToInsert.length,
+        hidden_skills_count: hiddenSkills,
+        documents_analyzed: 1,
+        completed_at: new Date().toISOString(),
+      })
+      .eq("id", analysisSession!.id);
 
     console.log("CV processing complete");
 

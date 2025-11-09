@@ -52,35 +52,27 @@ const Dashboard = () => {
       
       setProfile(profileData);
 
-      // Fetch or create skill profile
-      const { data: skillProfileData } = await supabase
-        .from("skill_profiles")
+      // Fetch skills directly from new skills table
+      const { data: skillsData, error: skillsError } = await supabase
+        .from("skills")
         .select("*")
         .eq("user_id", user?.id)
-        .maybeSingle();
-
-      if (!skillProfileData && user?.id) {
-        // Create skill profile if it doesn't exist
-        const { data: newProfile } = await supabase
-          .from("skill_profiles")
-          .insert([{ user_id: user.id }])
-          .select()
-          .single();
-        
-        setSkillProfile(newProfile);
-      } else {
-        setSkillProfile(skillProfileData);
+        .order("confidence_score", { ascending: false });
+      
+      if (skillsError) {
+        console.error("Error fetching skills:", skillsError);
       }
 
-      // Fetch extracted skills if profile exists
-      if (skillProfileData?.id) {
-        const { data: skillsData } = await supabase
-          .from("extracted_skills")
-          .select("*")
-          .eq("skill_profile_id", skillProfileData.id)
-          .order("confidence_score", { ascending: false });
-        
-        setExtractedSkills(skillsData || []);
+      setExtractedSkills(skillsData || []);
+
+      // Calculate skill profile stats from skills
+      if (skillsData && skillsData.length > 0) {
+        setSkillProfile({
+          total_skills: skillsData.length,
+          completeness_score: Math.min(skillsData.length / 20, 1.0),
+        });
+      } else {
+        setSkillProfile({ total_skills: 0, completeness_score: 0 });
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
@@ -372,11 +364,11 @@ const Dashboard = () => {
       />
 
       {/* Add Skill Dialog */}
-      {skillProfile?.id && (
+      {user?.id && (
         <AddSkillDialog
           open={addSkillDialogOpen}
           onOpenChange={setAddSkillDialogOpen}
-          skillProfileId={skillProfile.id}
+          userId={user.id}
           onSkillAdded={fetchUserData}
         />
       )}

@@ -70,8 +70,8 @@ export const SkillDetailModal = ({ skill, open, onOpenChange, onSkillUpdated, on
       const { data } = await supabase
         .from("skill_evidence")
         .select("*")
-        .eq("extracted_skill_id", skill.id)
-        .order("evidence_date", { ascending: false });
+        .eq("skill_id", skill.id)
+        .order("created_at", { ascending: false });
       
       setEvidence(data || []);
     } catch (error) {
@@ -85,12 +85,12 @@ export const SkillDetailModal = ({ skill, open, onOpenChange, onSkillUpdated, on
     setSaving(true);
     try {
       const { error } = await supabase
-        .from("extracted_skills")
+        .from("skills")
         .update({
           skill_name: editForm.skill_name,
           proficiency_level: (editForm.proficiency_level || null) as any,
           years_experience: editForm.years_experience ? parseInt(editForm.years_experience) : null,
-          last_used: editForm.last_used || null,
+          last_used_date: editForm.last_used || null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", skill.id);
@@ -120,7 +120,7 @@ export const SkillDetailModal = ({ skill, open, onOpenChange, onSkillUpdated, on
     setSaving(true);
     try {
       const { error } = await supabase
-        .from("extracted_skills")
+        .from("skills")
         .delete()
         .eq("id", skill.id);
 

@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      analysis_sessions: {
+        Row: {
+          completed_at: string | null
+          documents_analyzed: number | null
+          hidden_skills_count: number | null
+          id: string
+          session_status: string
+          started_at: string
+          total_skills_found: number | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          documents_analyzed?: number | null
+          hidden_skills_count?: number | null
+          id?: string
+          session_status?: string
+          started_at?: string
+          total_skills_found?: number | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          documents_analyzed?: number | null
+          hidden_skills_count?: number | null
+          id?: string
+          session_status?: string
+          started_at?: string
+          total_skills_found?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       data_sources: {
         Row: {
           file_path: string | null
@@ -57,6 +90,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      documents: {
+        Row: {
+          created_at: string
+          document_type: string
+          file_name: string
+          file_url: string
+          id: string
+          processing_status: string
+          upload_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          file_name: string
+          file_url: string
+          id?: string
+          processing_status?: string
+          upload_date?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          processing_status?: string
+          upload_date?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       extracted_skills: {
         Row: {
@@ -271,47 +337,48 @@ export type Database = {
       }
       skill_evidence: {
         Row: {
+          context: string | null
           created_at: string
-          description: string | null
-          evidence_date: string | null
-          evidence_type: Database["public"]["Enums"]["evidence_type"]
-          extracted_skill_id: string
+          document_id: string
+          evidence_text: string
+          evidence_type: string
           id: string
-          link: string | null
-          snippet: string | null
-          source_reliability: number | null
-          source_type: Database["public"]["Enums"]["source_type"]
+          reliability_score: number
+          skill_id: string
         }
         Insert: {
+          context?: string | null
           created_at?: string
-          description?: string | null
-          evidence_date?: string | null
-          evidence_type: Database["public"]["Enums"]["evidence_type"]
-          extracted_skill_id: string
+          document_id: string
+          evidence_text: string
+          evidence_type: string
           id?: string
-          link?: string | null
-          snippet?: string | null
-          source_reliability?: number | null
-          source_type: Database["public"]["Enums"]["source_type"]
+          reliability_score: number
+          skill_id: string
         }
         Update: {
+          context?: string | null
           created_at?: string
-          description?: string | null
-          evidence_date?: string | null
-          evidence_type?: Database["public"]["Enums"]["evidence_type"]
-          extracted_skill_id?: string
+          document_id?: string
+          evidence_text?: string
+          evidence_type?: string
           id?: string
-          link?: string | null
-          snippet?: string | null
-          source_reliability?: number | null
-          source_type?: Database["public"]["Enums"]["source_type"]
+          reliability_score?: number
+          skill_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "skill_evidence_extracted_skill_id_fkey"
-            columns: ["extracted_skill_id"]
+            foreignKeyName: "skill_evidence_document_id_fkey"
+            columns: ["document_id"]
             isOneToOne: false
-            referencedRelation: "extracted_skills"
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_evidence_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
             referencedColumns: ["id"]
           },
         ]
@@ -381,6 +448,54 @@ export type Database = {
           id?: string
           skill_name?: string
           subcategory?: string | null
+        }
+        Relationships: []
+      }
+      skills: {
+        Row: {
+          confidence_score: number
+          created_at: string
+          evidence_trail: Json | null
+          id: string
+          is_explicit: boolean
+          last_used_date: string | null
+          proficiency_level: string
+          skill_category: string
+          skill_name: string
+          source_documents: Json | null
+          updated_at: string
+          user_id: string
+          years_experience: number | null
+        }
+        Insert: {
+          confidence_score: number
+          created_at?: string
+          evidence_trail?: Json | null
+          id?: string
+          is_explicit?: boolean
+          last_used_date?: string | null
+          proficiency_level: string
+          skill_category: string
+          skill_name: string
+          source_documents?: Json | null
+          updated_at?: string
+          user_id: string
+          years_experience?: number | null
+        }
+        Update: {
+          confidence_score?: number
+          created_at?: string
+          evidence_trail?: Json | null
+          id?: string
+          is_explicit?: boolean
+          last_used_date?: string | null
+          proficiency_level?: string
+          skill_category?: string
+          skill_name?: string
+          source_documents?: Json | null
+          updated_at?: string
+          user_id?: string
+          years_experience?: number | null
         }
         Relationships: []
       }

@@ -80,18 +80,10 @@ export default function SkillGapAnalysis() {
   };
 
   const fetchUserSkills = async () => {
-    const { data: skillProfile } = await supabase
-      .from("skill_profiles")
-      .select("id")
-      .eq("user_id", user?.id)
-      .single();
-
-    if (!skillProfile) return;
-
     const { data, error } = await supabase
-      .from("extracted_skills")
+      .from("skills")
       .select("*")
-      .eq("skill_profile_id", skillProfile.id);
+      .eq("user_id", user?.id);
 
     if (error) {
       toast({

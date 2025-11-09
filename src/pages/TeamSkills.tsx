@@ -91,30 +91,10 @@ export default function TeamSkills() {
       return;
     }
 
-    const { data: skillProfiles, error: skillError } = await supabase
-      .from("skill_profiles")
-      .select("id, user_id")
-      .in("user_id", userIds);
-
-    if (skillError) {
-      toast({
-        title: "Error fetching skill profiles",
-        description: skillError.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const profileIds = skillProfiles?.map(sp => sp.id) || [];
-    if (profileIds.length === 0) {
-      setTeamSkills([]);
-      return;
-    }
-
     const { data: skills, error: skillsError } = await supabase
-      .from("extracted_skills")
+      .from("skills")
       .select("*")
-      .in("skill_profile_id", profileIds);
+      .in("user_id", userIds);
 
     if (skillsError) {
       toast({

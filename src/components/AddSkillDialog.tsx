@@ -36,11 +36,11 @@ type AddSkillFormData = z.infer<typeof addSkillSchema>;
 interface AddSkillDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  skillProfileId: string;
+  userId: string;
   onSkillAdded: () => void;
 }
 
-export const AddSkillDialog = ({ open, onOpenChange, skillProfileId, onSkillAdded }: AddSkillDialogProps) => {
+export const AddSkillDialog = ({ open, onOpenChange, userId, onSkillAdded }: AddSkillDialogProps) => {
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
@@ -67,15 +67,16 @@ export const AddSkillDialog = ({ open, onOpenChange, skillProfileId, onSkillAdde
     setSaving(true);
     try {
       const { error } = await supabase
-        .from("extracted_skills")
+        .from("skills")
         .insert({
-          skill_profile_id: skillProfileId,
+          user_id: userId,
           skill_name: data.skill_name.trim(),
+          skill_category: "technical",
           proficiency_level: data.proficiency_level,
-          confidence_score: 1.0, // Manual entries get full confidence
+          confidence_score: 1.0,
+          is_explicit: true,
           years_experience: data.years_experience,
-          last_used: data.last_used || null,
-          is_hidden: false,
+          last_used_date: data.last_used || null,
         });
 
       if (error) throw error;
