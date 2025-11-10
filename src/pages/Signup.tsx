@@ -8,8 +8,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Mail, Lock, User, CheckCircle, XCircle, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
-import { OAuthButton } from "@/components/auth/OAuthButton";
-import { Separator } from "@/components/ui/separator";
 
 const signupSchema = z.object({
   fullName: z
@@ -191,34 +189,6 @@ export default function Signup() {
             </CardHeader>
             
             <CardContent className="space-y-6">
-              {/* OAuth Buttons */}
-              <div className="space-y-3">
-                <OAuthButton
-                  provider="google"
-                  text="Continue with Google"
-                />
-                
-                <OAuthButton
-                  provider="github"
-                  text="Continue with GitHub"
-                />
-                
-                <OAuthButton
-                  provider="linkedin_oidc"
-                  text="Continue with LinkedIn"
-                />
-              </div>
-
-              {/* Divider */}
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <Separator />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">Or continue with email</span>
-                </div>
-              </div>
-
               {/* Email/Password Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
