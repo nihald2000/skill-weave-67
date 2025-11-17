@@ -12,13 +12,13 @@ serve(async (req) => {
   }
 
   try {
-    const { originalText, jobDescription, userSkills, userId, action, githubData } = await req.json();
+    const { originalText, jobDescription, userSkills, userId, action, githubData, linkedInData } = await req.json();
 
     if (!originalText || !userId) {
       throw new Error("Original text and user ID are required");
     }
 
-    console.log(`CV enhancement request - Action: ${action}, User: ${userId}, Has Job Desc: ${!!jobDescription}, Has GitHub: ${!!githubData}`);
+    console.log(`CV enhancement request - Action: ${action}, User: ${userId}, Has Job Desc: ${!!jobDescription}, Has GitHub: ${!!githubData}, Has LinkedIn: ${!!linkedInData}`);
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -57,6 +57,10 @@ Return your response as a JSON object with this exact structure:
       }
       if (githubData) {
         additionalContext += `\n\nGitHub Profile Data:\n- Public Repos: ${githubData.public_repos}\n- Top Languages: ${githubData.languages?.slice(0, 5).join(", ")}\n- Notable Projects: ${githubData.popular_repos?.slice(0, 3).map((r: any) => r.name).join(", ")}\n\nConsider mentioning relevant GitHub projects and contributions.`;
+      }
+      if (linkedInData) {
+        const linkedInSummary = `\n\nLinkedIn Profile Data:\n- Headline: ${linkedInData.headline}\n- Summary: ${linkedInData.summary?.substring(0, 200)}...\n- Skills Listed: ${linkedInData.skills?.split(',').slice(0, 10).join(", ")}\n- Experience: ${linkedInData.experience?.substring(0, 200)}...\n\nCompare the resume with LinkedIn data to identify missing information and inconsistencies.`;
+        additionalContext += linkedInSummary;
       }
 
       userPrompt = `Analyze this resume and provide improvement suggestions.
@@ -106,6 +110,10 @@ Guidelines:
       }
       if (githubData) {
         additionalContext += `\n\nGitHub Profile Data:\n- Public Repos: ${githubData.public_repos}\n- Top Languages: ${githubData.languages?.slice(0, 5).join(", ")}\n- Popular Projects: ${githubData.popular_repos?.slice(0, 3).map((r: any) => `${r.name} (${r.stars} stars)`).join(", ")}\n\nIncorporate relevant GitHub projects naturally into the resume.`;
+      }
+      if (linkedInData) {
+        const linkedInSummary = `\n\nLinkedIn Profile Data:\n- Headline: ${linkedInData.headline}\n- Summary: ${linkedInData.summary}\n- Skills: ${linkedInData.skills}\n- Key Experience: ${linkedInData.experience?.substring(0, 300)}\n\nIntegrate compelling elements from the LinkedIn profile that are missing from the current resume.`;
+        additionalContext += linkedInSummary;
       }
 
       userPrompt = `Enhance this resume to be more impactful and highlight the user's skills.

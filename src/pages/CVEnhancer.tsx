@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import jsPDF from "jspdf";
+import { LinkedInInputDialog, LinkedInData } from "@/components/LinkedInInputDialog";
 
 interface WeakPoint {
   section: string;
@@ -64,6 +65,8 @@ export default function CVEnhancer() {
   const [userSkills, setUserSkills] = useState<any[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
   const [githubData, setGithubData] = useState<any>(null);
+  const [linkedInData, setLinkedInData] = useState<LinkedInData | null>(null);
+  const [linkedInDialogOpen, setLinkedInDialogOpen] = useState(false);
   
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [enhancement, setEnhancement] = useState<EnhancementResult | null>(null);
@@ -125,6 +128,11 @@ export default function CVEnhancer() {
     return match ? match[1] : null;
   };
 
+  const extractLinkedInLink = (text: string): boolean => {
+    const linkedinRegex = /linkedin\.com\/in\/([a-zA-Z0-9-]+)/i;
+    return linkedinRegex.test(text);
+  };
+
   const analyzeGitHub = async () => {
     const githubUsername = extractGitHubLink(originalText);
     if (!githubUsername) {
@@ -150,6 +158,12 @@ export default function CVEnhancer() {
     }
   };
 
+  const handleLinkedInSubmit = (data: LinkedInData) => {
+    setLinkedInData(data);
+    setLinkedInDialogOpen(false);
+    toast.success("LinkedIn profile data imported successfully");
+  };
+
   const analyzeResume = async () => {
     if (!originalText.trim() || originalText === "Paste your resume text here or select a document above...") {
       toast.error("Please enter your resume text");
@@ -168,6 +182,7 @@ export default function CVEnhancer() {
           userId: user?.id,
           action: 'analyze',
           githubData,
+          linkedInData,
         },
       });
 
@@ -201,6 +216,7 @@ export default function CVEnhancer() {
           userId: user?.id,
           action: 'enhance',
           githubData,
+          linkedInData,
         },
       });
 
@@ -391,6 +407,17 @@ export default function CVEnhancer() {
                       )}
                     </Button>
                   )}
+
+                  {extractLinkedInLink(originalText) && (
+                    <Button 
+                      onClick={() => setLinkedInDialogOpen(true)}
+                      variant="outline"
+                      className="min-w-[180px]"
+                    >
+                      <FileText className="mr-2 h-4 w-4" />
+                      {linkedInData ? "Update LinkedIn" : "Import LinkedIn"}
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -446,6 +473,41 @@ export default function CVEnhancer() {
                             ))}
                           </div>
                         )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* LinkedIn Profile Info */}
+                  {linkedInData && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-blue-500" />
+                        LinkedIn Profile Imported
+                      </h3>
+                      <div className="p-3 border rounded-lg bg-accent/50 space-y-2">
+                        {linkedInData.headline && (
+                          <div className="text-sm font-medium">{linkedInData.headline}</div>
+                        )}
+                        {linkedInData.summary && (
+                          <p className="text-xs text-muted-foreground line-clamp-3">{linkedInData.summary}</p>
+                        )}
+                        {linkedInData.skills && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {linkedInData.skills.split(',').slice(0, 8).map((skill: string, idx: number) => (
+                              <Badge key={idx} variant="secondary" className="text-xs">
+                                {skill.trim()}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs h-7 mt-2"
+                          onClick={() => setLinkedInDialogOpen(true)}
+                        >
+                          Update LinkedIn Data
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -615,6 +677,12 @@ export default function CVEnhancer() {
             )}
           </div>
         </div>
+
+        <LinkedInInputDialog
+          open={linkedInDialogOpen}
+          onOpenChange={setLinkedInDialogOpen}
+          onSubmit={handleLinkedInSubmit}
+        />
       </main>
     </div>
   );
