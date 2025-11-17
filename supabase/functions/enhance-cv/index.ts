@@ -12,13 +12,13 @@ serve(async (req) => {
   }
 
   try {
-    const { originalText, userSkills, userId, action } = await req.json();
+    const { originalText, jobDescription, userSkills, userId, action, githubData } = await req.json();
 
     if (!originalText || !userId) {
       throw new Error("Original text and user ID are required");
     }
 
-    console.log(`CV enhancement request - Action: ${action}, User: ${userId}`);
+    console.log(`CV enhancement request - Action: ${action}, User: ${userId}, Has Job Desc: ${!!jobDescription}, Has GitHub: ${!!githubData}`);
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -50,18 +50,29 @@ Return your response as a JSON object with this exact structure:
 }`;
 
       const skillsList = userSkills.map((s: any) => s.skill_name).join(", ");
+      
+      let additionalContext = "";
+      if (jobDescription) {
+        additionalContext += `\n\nTarget Job Description:\n${jobDescription}\n\nPlease tailor your analysis to this specific job role and identify which skills and experiences are most relevant.`;
+      }
+      if (githubData) {
+        additionalContext += `\n\nGitHub Profile Data:\n- Public Repos: ${githubData.public_repos}\n- Top Languages: ${githubData.languages?.slice(0, 5).join(", ")}\n- Notable Projects: ${githubData.popular_repos?.slice(0, 3).map((r: any) => r.name).join(", ")}\n\nConsider mentioning relevant GitHub projects and contributions.`;
+      }
+
       userPrompt = `Analyze this resume and provide improvement suggestions.
 
 User's discovered skills: ${skillsList}
 
 Resume text:
 ${originalText}
+${additionalContext}
 
 Identify:
 1. Skills the user has but are not mentioned in the resume
 2. Weak sections that lack impact
 3. Statements that need quantification/metrics
-4. Calculate what percentage of the user's skills are actually mentioned`;
+4. Calculate what percentage of the user's skills are actually mentioned
+${jobDescription ? "5. How well the resume aligns with the target job requirements" : ""}`;
 
     } else if (action === "enhance") {
       systemPrompt = `You are a professional resume writer. Rewrite resume content to be more impactful and quantifiable.
@@ -89,14 +100,24 @@ Guidelines:
         `${s.skill_name} (${s.proficiency_level})`
       ).join(", ");
 
+      let additionalContext = "";
+      if (jobDescription) {
+        additionalContext += `\n\nTarget Job Description:\n${jobDescription}\n\nTailor the resume specifically for this role, emphasizing relevant skills and experiences.`;
+      }
+      if (githubData) {
+        additionalContext += `\n\nGitHub Profile Data:\n- Public Repos: ${githubData.public_repos}\n- Top Languages: ${githubData.languages?.slice(0, 5).join(", ")}\n- Popular Projects: ${githubData.popular_repos?.slice(0, 3).map((r: any) => `${r.name} (${r.stars} stars)`).join(", ")}\n\nIncorporate relevant GitHub projects naturally into the resume.`;
+      }
+
       userPrompt = `Enhance this resume to be more impactful and highlight the user's skills.
 
 User's skills to incorporate: ${skillsList}
 
 Original resume:
 ${originalText}
+${additionalContext}
 
-Rewrite the resume to be more powerful, adding metrics and quantifiable achievements where possible. Ensure their skills are naturally woven throughout.`;
+Rewrite the resume to be more powerful, adding metrics and quantifiable achievements where possible. Ensure their skills are naturally woven throughout.
+${jobDescription ? "Make sure the enhanced resume strongly aligns with the target job requirements." : ""}`;
     } else {
       throw new Error("Invalid action. Must be 'analyze' or 'enhance'");
     }

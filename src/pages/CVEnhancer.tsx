@@ -57,10 +57,13 @@ export default function CVEnhancer() {
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
+  const [analyzingGitHub, setAnalyzingGitHub] = useState(false);
   
   const [originalText, setOriginalText] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
   const [userSkills, setUserSkills] = useState<any[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
+  const [githubData, setGithubData] = useState<any>(null);
   
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [enhancement, setEnhancement] = useState<EnhancementResult | null>(null);
@@ -116,6 +119,37 @@ export default function CVEnhancer() {
     setLoading(false);
   };
 
+  const extractGitHubLink = (text: string): string | null => {
+    const githubRegex = /github\.com\/([a-zA-Z0-9-]+)/i;
+    const match = text.match(githubRegex);
+    return match ? match[1] : null;
+  };
+
+  const analyzeGitHub = async () => {
+    const githubUsername = extractGitHubLink(originalText);
+    if (!githubUsername) {
+      toast.error("No GitHub link found in resume");
+      return;
+    }
+
+    setAnalyzingGitHub(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-github', {
+        body: { username: githubUsername },
+      });
+
+      if (error) throw error;
+      
+      setGithubData(data);
+      toast.success("GitHub profile analyzed successfully");
+    } catch (error: any) {
+      console.error("GitHub analysis error:", error);
+      toast.error(error.message || "Failed to analyze GitHub profile");
+    } finally {
+      setAnalyzingGitHub(false);
+    }
+  };
+
   const analyzeResume = async () => {
     if (!originalText.trim() || originalText === "Paste your resume text here or select a document above...") {
       toast.error("Please enter your resume text");
@@ -129,9 +163,11 @@ export default function CVEnhancer() {
       const { data, error } = await supabase.functions.invoke('enhance-cv', {
         body: {
           originalText,
+          jobDescription: jobDescription.trim() || null,
           userSkills,
           userId: user?.id,
           action: 'analyze',
+          githubData,
         },
       });
 
@@ -160,9 +196,11 @@ export default function CVEnhancer() {
       const { data, error } = await supabase.functions.invoke('enhance-cv', {
         body: {
           originalText,
+          jobDescription: jobDescription.trim() || null,
           userSkills,
           userId: user?.id,
           action: 'enhance',
+          githubData,
         },
       });
 
@@ -272,18 +310,35 @@ export default function CVEnhancer() {
                 <CardDescription>Paste your current resume text</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Textarea
-                  value={originalText}
-                  onChange={(e) => setOriginalText(e.target.value)}
-                  placeholder="Paste your resume text here..."
-                  rows={20}
-                  className="resize-none font-mono text-sm"
-                />
-                <div className="flex gap-2">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">
+                    Your Resume
+                  </label>
+                  <Textarea
+                    value={originalText}
+                    onChange={(e) => setOriginalText(e.target.value)}
+                    placeholder="Paste your resume text here or select a document above..."
+                    className="min-h-[300px] font-mono text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">
+                    Job Description (Optional)
+                  </label>
+                  <Textarea
+                    value={jobDescription}
+                    onChange={(e) => setJobDescription(e.target.value)}
+                    placeholder="Paste the job description to tailor your resume for this specific role..."
+                    className="min-h-[150px] text-sm"
+                  />
+                </div>
+
+                <div className="flex gap-2 flex-wrap">
                   <Button
                     onClick={analyzeResume}
                     disabled={analyzing || !originalText.trim() || userSkills.length === 0}
-                    className="flex-1"
+                    className="flex-1 min-w-[180px]"
                   >
                     {analyzing ? (
                       <>
@@ -292,7 +347,7 @@ export default function CVEnhancer() {
                       </>
                     ) : (
                       <>
-                        <AlertCircle className="mr-2 h-4 w-4" />
+                        <Sparkles className="mr-2 h-4 w-4" />
                         Analyze Resume
                       </>
                     )}
@@ -300,7 +355,8 @@ export default function CVEnhancer() {
                   <Button
                     onClick={enhanceResume}
                     disabled={enhancing || !originalText.trim() || userSkills.length === 0}
-                    className="flex-1"
+                    variant="secondary"
+                    className="flex-1 min-w-[180px]"
                   >
                     {enhancing ? (
                       <>
@@ -309,11 +365,32 @@ export default function CVEnhancer() {
                       </>
                     ) : (
                       <>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Generate Enhanced
+                        <TrendingUp className="mr-2 h-4 w-4" />
+                        Enhance Resume
                       </>
                     )}
                   </Button>
+
+                  {extractGitHubLink(originalText) && (
+                    <Button 
+                      onClick={analyzeGitHub}
+                      disabled={analyzingGitHub}
+                      variant="outline"
+                      className="min-w-[180px]"
+                    >
+                      {analyzingGitHub ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Analyzing GitHub...
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="mr-2 h-4 w-4" />
+                          Analyze GitHub
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -342,6 +419,36 @@ export default function CVEnhancer() {
                       {getSkillCoverageLabel(analysis.skillCoverage)} - Goal: 80%+
                     </p>
                   </div>
+
+                  {/* GitHub Profile Info */}
+                  {githubData && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        GitHub Profile Detected
+                      </h3>
+                      <div className="p-3 border rounded-lg bg-accent/50 space-y-2">
+                        <div className="text-sm">
+                          <span className="font-medium">{githubData.name || githubData.username}</span>
+                          {githubData.bio && <p className="text-xs text-muted-foreground mt-1">{githubData.bio}</p>}
+                        </div>
+                        <div className="flex gap-4 text-xs text-muted-foreground">
+                          <span>{githubData.public_repos} repos</span>
+                          <span>{githubData.followers} followers</span>
+                          <span>⭐ {githubData.total_stars} stars</span>
+                        </div>
+                        {githubData.languages && githubData.languages.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {githubData.languages.slice(0, 5).map((lang: string, idx: number) => (
+                              <Badge key={idx} variant="secondary" className="text-xs">
+                                {lang}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Missing Skills */}
                   {analysis.missingSkills.length > 0 && (
