@@ -133,12 +133,9 @@ export default function CVEnhancer() {
     return linkedinRegex.test(text);
   };
 
-  const analyzeGitHub = async () => {
-    const githubUsername = extractGitHubLink(originalText);
-    if (!githubUsername) {
-      toast.error("No GitHub link found in resume");
-      return;
-    }
+  const analyzeGitHub = async (text: string) => {
+    const githubUsername = extractGitHubLink(text);
+    if (!githubUsername) return;
 
     setAnalyzingGitHub(true);
     try {
@@ -157,6 +154,13 @@ export default function CVEnhancer() {
       setAnalyzingGitHub(false);
     }
   };
+
+  // Auto-analyze GitHub when originalText changes
+  useEffect(() => {
+    if (originalText && extractGitHubLink(originalText)) {
+      analyzeGitHub(originalText);
+    }
+  }, [originalText]);
 
   const handleLinkedInSubmit = (data: LinkedInData) => {
     setLinkedInData(data);
@@ -415,25 +419,11 @@ export default function CVEnhancer() {
                     )}
                   </Button>
 
-                  {extractGitHubLink(originalText) && (
-                    <Button 
-                      onClick={analyzeGitHub}
-                      disabled={analyzingGitHub}
-                      variant="outline"
-                      className="min-w-[180px]"
-                    >
-                      {analyzingGitHub ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Analyzing GitHub...
-                        </>
-                      ) : (
-                        <>
-                          <FileText className="mr-2 h-4 w-4" />
-                          Analyze GitHub
-                        </>
-                      )}
-                    </Button>
+                  {analyzingGitHub && (
+                    <div className="flex items-center gap-2 p-3 bg-muted rounded-md">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-sm">Analyzing GitHub profile...</span>
+                    </div>
                   )}
 
                   {extractLinkedInLink(originalText) && (
