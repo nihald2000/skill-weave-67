@@ -323,9 +323,37 @@ export default function CVEnhancer() {
                   <FileText className="h-5 w-5" />
                   Original Resume
                 </CardTitle>
-                <CardDescription>Paste your current resume text</CardDescription>
+                <CardDescription>
+                  {documents.length > 0 
+                    ? "Your uploaded resume or paste new text below" 
+                    : "Paste your current resume text"}
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {documents.length > 0 && (
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
+                      Select Document
+                    </label>
+                    <select
+                      className="w-full p-2 border rounded-md bg-background"
+                      onChange={(e) => {
+                        const doc = documents.find(d => d.id === e.target.value);
+                        if (doc?.extracted_text) {
+                          setOriginalText(doc.extracted_text);
+                          toast.success("Document loaded!");
+                        }
+                      }}
+                      defaultValue={documents[0]?.id}
+                    >
+                      {documents.map((doc) => (
+                        <option key={doc.id} value={doc.id}>
+                          {doc.file_name} ({new Date(doc.upload_date).toLocaleDateString()})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div>
                   <label className="text-sm font-medium mb-2 block">
                     Your Resume
@@ -670,7 +698,7 @@ export default function CVEnhancer() {
                   <Sparkles className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-xl font-semibold mb-2">No Enhancement Yet</h3>
                   <p className="text-muted-foreground mb-6">
-                    Click "Generate Enhanced" to create an optimized version of your resume
+                    Click "Enhance Resume" to create an optimized version of your resume
                   </p>
                 </CardContent>
               </Card>
