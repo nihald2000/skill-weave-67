@@ -1,0 +1,36 @@
+name: Security Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  auth-security:
+    name: Auth configuration checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run auth security checks
+        env:
+          # Publishable/anon key + project URL are safe to expose. Set them as
+          # repository variables (Settings → Secrets and variables → Actions →
+          # Variables) so this workflow can hit the live Auth server.
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: node scripts/check-auth-security.mjs
+
+      # Fail-fast guard: block PRs that ship a UI password reset without the
+      # required /reset-password page, which would silently auto-log-in users.
+      - name: Verify password-reset page exists if reset flow is used
+        run: |
+          if grep -RIn "resetPasswordForEmail" src >/dev/null 2>&1; then
+            if ! grep -RIn "type=recovery\|updateUser({ password" src >/dev/null 2>&1; then
+              echo "::error::resetPasswordForEmail is used but no /reset-password handler (type=recovery + updateUser) was found."
+              exit 1
+            fi
+          fi
